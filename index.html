@@ -43,7 +43,7 @@ footer{text-align:center;color:#8a96a6;font-size:11px;padding:24px}
 <section id="adminPanel" class="panel">
  <div class="section-head"><h3>Admin Workspace</h3><button class="secondary" onclick="toggleAdmin()">Close</button></div>
  <div class="notice"><b>Connected mode:</b> Public visitors can view tournament data. Only the authenticated admin account registered in app_admins can make changes.</div>
- <div id="adminLoginBox"><h3>Admin Login</h3><div class="formgrid"><div class="field"><label>Admin email</label><input id="adminEmail" type="email" placeholder="Your Supabase Auth email"></div><div class="field"><label>Password</label><input id="adminPassword" type="password" placeholder="Your password"></div></div><button class="primary" onclick="adminLogin()">Login</button></div><div id="adminTools" class="hidden"><div class="actions"><button class="secondary" onclick="adminLogout()">Logout</button></div><h3>Add Team</h3><div class="formgrid">
+ <div id="adminLoginBox"><h3>Admin Login</h3><div class="formgrid"><div class="field"><label>Admin email</label><input id="adminEmail" type="email" placeholder="Your Supabase Auth email"></div><div class="field"><label>Password</label><input id="adminPassword" type="password" placeholder="Your password"></div></div><button id="loginButton" class="primary" type="button" onclick="window.adminLogin()">Login</button><p id="loginStatus" role="status" style="font-size:13px;margin-top:10px;color:#52647c"></p></div><div id="adminTools" class="hidden"><div class="actions"><button class="secondary" onclick="adminLogout()">Logout</button></div><h3>Add Team</h3><div class="formgrid">
   <div class="field"><label>Team name</label><input id="teamName" placeholder="e.g. Balashi United"></div>
   <div class="field"><label>Group</label><select id="teamGroup"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
   <div class="field"><label>Manager name (optional)</label><input id="managerName" placeholder="Team manager"></div>
@@ -88,7 +88,18 @@ footer{text-align:center;color:#8a96a6;font-size:11px;padding:24px}
 <script>
 const SUPABASE_URL = "https://tbsydkiqueetsvnsoeew.supabase.co";
 const SUPABASE_KEY = "sb_publishable_NY6XliqJS6_Xab8IoB9ZOQ_9SJMz4CY";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabaseClient = null;
+let supabaseInitError = "";
+try {
+  if (!window.supabase || typeof window.supabase.createClient !== "function") {
+    throw new Error("Supabase library did not load. Please refresh the page or try another network.");
+  }
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+  supabaseInitError = e.message || String(e);
+}
+const supabase = supabaseClient;
+
 let currentUser = null;
 let isAdmin = false;
 let db = {teams:[], matches:[], notices:[]};
@@ -112,7 +123,40 @@ function toggleAdmin(){document.getElementById("adminPanel").classList.toggle("s
 function openAdminFromUrl(){if(location.hash==="#admin"){document.getElementById("adminPanel").classList.add("show");}}
 openAdminFromUrl();
 window.addEventListener("hashchange",openAdminFromUrl);
-async function adminLogin(){const email=document.getElementById("adminEmail").value.trim();const password=document.getElementById("adminPassword").value; if(!email||!password)return alert("Enter admin email and password."); const {data,error}=await supabase.auth.signInWithPassword({email,password}); if(error)return alert(error.message); currentUser=data.user; const {data:row,error:checkError}=await supabase.from("app_admins").select("user_id").eq("user_id",currentUser.id).maybeSingle(); if(checkError||!row){await supabase.auth.signOut();currentUser=null;return alert("This account is not registered as a tournament admin.");} isAdmin=true; document.getElementById("adminLoginBox").classList.add("hidden"); document.getElementById("adminTools").classList.remove("hidden"); alert("Admin login successful.");}
+window.adminLogin = async function () {
+  const status = document.getElementById("loginStatus");
+  const button = document.getElementById("loginButton");
+  const email = document.getElementById("adminEmail").value.trim();
+  const password = document.getElementById("adminPassword").value;
+  const show = (message, ok=false) => {
+    if (status) { status.textContent = message; status.style.color = ok ? "#16865b" : "#b42318"; }
+  };
+  if (!email || !password) { show("Please enter both admin email and password."); return; }
+  if (!supabase) { show("Connection setup error: " + (supabaseInitError || "Supabase is unavailable.")); return; }
+  if (button) { button.disabled = true; button.textContent = "Signing in..."; }
+  show("Connecting to Supabase...");
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error("Login failed: " + error.message);
+    currentUser = data.user;
+    const { data: row, error: checkError } = await supabase
+      .from("app_admins").select("user_id").eq("user_id", currentUser.id).maybeSingle();
+    if (checkError) throw new Error("Signed in, but admin permission could not be checked: " + checkError.message);
+    if (!row) {
+      await supabase.auth.signOut();
+      currentUser = null;
+      throw new Error("This email is not listed in app_admins. Add this user's Auth UID to app_admins in Supabase.");
+    }
+    isAdmin = true;
+    document.getElementById("adminLoginBox").classList.add("hidden");
+    document.getElementById("adminTools").classList.remove("hidden");
+    show("Admin login successful.", true);
+  } catch (e) {
+    show(e.message || String(e));
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "Login"; }
+  }
+};
 async function adminLogout(){await supabase.auth.signOut();currentUser=null;isAdmin=false;document.getElementById("adminLoginBox").classList.remove("hidden");document.getElementById("adminTools").classList.add("hidden");}
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));document.getElementById(b.dataset.tab).classList.remove("hidden")});
 async function addTeam(){if(!isAdmin)return alert("Admin login required.");let n=document.getElementById("teamName").value.trim();if(!n)return alert("Enter a team name");const {error}=await supabase.from("teams").insert({name:n,group_code:document.getElementById("teamGroup").value,manager_name:document.getElementById("managerName").value.trim()||null,short_name:document.getElementById("teamShort").value.trim()||null});if(error)return alert(error.message);["teamName","managerName","teamShort"].forEach(id=>document.getElementById(id).value="");await save();}
@@ -128,6 +172,6 @@ let matches=db.matches.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""
 let groups=[...new Set(db.teams.map(t=>t.group))].sort();document.getElementById("standingList").innerHTML=groups.map(g=>`<div class="card" style="margin-bottom:13px"><h3>Group ${g}</h3><table class="table"><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${standings(g).map(r=>`<tr><td>${esc(r.name)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div>`).join("")||'<div class="empty">Standings will be calculated after teams and results are added.</div>';
 let ns=db.notices.map(n=>`<div class="card" style="margin-bottom:9px"><b>📢 Tournament Notice</b><p style="margin:7px 0">${esc(n.text)}</p><small class="hint">${dateText(n.date)}</small></div>`).join("")||'<div class="empty">No announcements yet.</div>';document.getElementById("noticeList").innerHTML=ns;document.getElementById("homeNotices").innerHTML=db.notices.slice(0,2).map(n=>`<div class="notice">${esc(n.text)}<div class="hint" style="margin-top:5px">${dateText(n.date)}</div></div>`).join("")||'<div class="hint">No announcements published.</div>';
 let opts=db.teams.map(t=>`<option value="${t.id}">${esc(t.name)} (Group ${t.group})</option>`).join("");["homeTeam","awayTeam"].forEach(id=>document.getElementById(id).innerHTML='<option value="">Select team</option>'+opts);document.getElementById("scoreMatch").innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("")}
-loadData().catch(e=>{console.error(e);alert("Supabase connection error: "+e.message)});
+if (supabase) { loadData().catch(e=>{console.error(e); alert("Supabase connection error: "+e.message);}); } else { console.error(supabaseInitError); }
 </script>
 </body></html>
