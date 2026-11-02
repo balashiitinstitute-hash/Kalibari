@@ -122,6 +122,118 @@ footer{color:#8a96a6}
  .hero:after{font-size:130px;right:8px;bottom:-30px}
 }
 
+
+/* UPDATED THEME: midnight sports dashboard with violet glass accents.
+   Visual-only overrides; existing HTML structure and application logic are preserved. */
+:root{
+  --navy:#080b18; --navy2:#11152a; --panel:#20243a; --gold:#b8a1ff;
+  --bg:#e4ddff; --ink:#f4f2ff; --muted:#a6abc2; --line:#34384f; --green:#58d6a5;
+}
+html{min-height:100%;background:#e4ddff}
+body{
+  min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#f2efff 0%,#ddd5ff 60%,#d4caff 100%);
+  color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+header{
+  color:#f8f7ff;background:linear-gradient(120deg,#080a16 0%,#111429 58%,#1a1a36 100%);
+  padding:22px max(18px,calc((100% - 1080px)/2)) 24px;
+  border-bottom:1px solid #ffffff18;box-shadow:0 14px 34px #17112d28;overflow:hidden;
+}
+header:after{border-color:#b8a1ff28;box-shadow:0 0 0 28px #b8a1ff0a,0 0 0 58px #b8a1ff08}
+.crest{
+  background:linear-gradient(145deg,#d6c8ff,#8170c9);color:#111326;border:1px solid #e7ddff;
+  border-radius:50%;box-shadow:0 0 22px #9c87f54d;
+}
+h1{color:#fff;font-weight:850;letter-spacing:1px}
+.sub{color:#b9afdF;letter-spacing:1.8px}
+.admin{background:#24243d;color:#f6f3ff;border:1px solid #484263;border-radius:999px}
+main{max-width:1180px;padding:20px}
+.hero{
+  position:relative;overflow:hidden;color:#f8f7ff;
+  background:radial-gradient(circle at 85% 8%,#a998ff22,transparent 32%),linear-gradient(120deg,#111326 0%,#1b2037 62%,#282544 100%);
+  border:1px solid #ffffff16;border-radius:20px;padding:27px;
+  box-shadow:0 14px 36px #20193b24;
+}
+.hero:after{color:#c7b9ff0a}
+.kicker{color:#c7b7ff;font-weight:850;letter-spacing:2px}
+.hero h2{color:#fff}.hero p{color:#b7bdd2}
+.stats{gap:12px}
+.stat,.card{
+  color:#f2f1fc;background:linear-gradient(145deg,#202438f2,#171b2cf5);
+  border:1px solid #ffffff12;border-radius:17px;
+  box-shadow:0 9px 24px #11102018;transition:transform .18s,border-color .18s,box-shadow .18s;
+}
+.stat:hover,.card:hover{box-shadow:0 12px 28px #17112e30;border-color:#a998ff42}
+.stat span,.hint,.team small,.match small{color:#a7aec5}
+.stat b{color:#fff}
+nav{gap:8px;padding:7px 0 16px}
+nav button{
+  background:#171a2b;color:#c4c7d8;border:1px solid #ffffff14;border-radius:999px;
+  padding:11px 16px;font-weight:750;transition:background .18s,border-color .18s,color .18s;
+}
+nav button:hover{border-color:#a998ff80;color:#fff}
+nav button.active{
+  background:linear-gradient(120deg,#9b89e8,#c5b5ff);color:#151429;border-color:#b8a1ff;
+  box-shadow:0 5px 18px #a998ff35;
+}
+.section-head h3,.panel h3{color:#f5f3ff}
+.section-head{margin-top:12px}
+.badge{background:#302b4b;color:#c8baff;border:1px solid #ffffff10}
+.pill{background:#302b4b;color:#d4c9ff;border:1px solid #5a4e7c;border-radius:999px}
+.versus{color:#b8bcd0}
+.score{color:#fff}
+.empty{background:#1a1e30;color:#aeb3c8;border:1px dashed #48445f;border-radius:15px}
+.panel{
+  background:linear-gradient(145deg,#1c2033f7,#141827fa);color:#f4f2ff;
+  border:1px solid #ffffff18;border-radius:19px;padding:20px;
+  box-shadow:0 18px 45px #1411262b;
+}
+.panel.show{display:block}
+.panel h3{color:#f7f5ff}
+.notice{border-left:4px solid #b8a1ff;background:#292540;color:#e3dcff;border-radius:10px}
+input,select,textarea{
+  color:#f4f2ff;background:#111526;border:1px solid #393d56;border-radius:11px;
+}
+input::placeholder,textarea::placeholder{color:#7f879f}
+input:focus,select:focus,textarea:focus{outline:3px solid #b8a1ff24;border-color:#aa96ff}
+label{color:#b8bdd2}
+.primary{
+  color:#171429;background:linear-gradient(120deg,#a795f0,#d0c2ff);
+  border:1px solid #d8ceff;box-shadow:0 5px 16px #a998ff24;
+}
+.primary:hover{filter:brightness(1.07)}
+.secondary{background:#292d43;color:#e5e2f7;border:1px solid #424660}
+.danger{background:#3a222e;color:#ffb9c5;border:1px solid #613344}
+.table{color:#ecebfa;background:#171b2c;border-radius:13px}
+.table th{background:#29263f;color:#c9baff}
+.table td{border-bottom:1px solid #30344a;color:#e6e5f4}
+.table th,.table td{border-bottom-color:#30344a}
+.admin-section{background:linear-gradient(145deg,#1c2033,#171b2b);border:1px solid #34384f;border-radius:15px}
+.admin-section h3{color:#f3f0ff}
+.manage-row{border-bottom-color:#30344a}
+.manage-meta small{color:#a7aec5}
+.admin-chip{color:#d4c8ff;background:#302949;border:1px solid #51456d}
+.player-team-group{background:#191d2e;border-color:#34384f}
+.player-team-toggle{background:#23273b;color:#f0effb}
+.player-team-toggle small,.player-team-toggle .team-chevron{color:#a9aec5}
+.player-team-members{border-top-color:#34384f}
+.player-player-row{border-bottom-color:#30344a}
+.player-player-row small{color:#a7aec5}
+.team-player-details{border-top-color:#34384f}
+.team-player-line{border-bottom-color:#30344a}
+.team-card .team-name{color:#f2efff}
+footer{color:#7b779a}
+hr{border-top-color:#34384f!important}
+@media(max-width:650px){
+  body{background:linear-gradient(160deg,#e9e3ff,#d9d0ff)}
+  main{padding:13px}
+  header{padding-top:20px;padding-bottom:22px}
+  .hero{padding:21px}
+  .panel{padding:14px}
+  nav{padding-bottom:13px}
+  nav button{padding:10px 13px}
+}
+
 </style>
 </head>
 <body>
