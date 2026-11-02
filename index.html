@@ -157,18 +157,40 @@ let currentUser = null;
 let isAdmin = false;
 let db = {teams:[], matches:[], notices:[], players:[]};
 async function loadData(){
-  const [t,m,n,p] = await Promise.all([
-    supabaseApi.from("teams").select("*").order("created_at"),
-    supabaseApi.from("matches").select("*").order("match_date"),
-    supabaseApi.from("notices").select("*").order("created_at",{ascending:false}),
-    supabaseApi.from("team_players").select("*").order("goals",{ascending:false})
-  ]);
-  for (const r of [t,m,n,p]) if(r.error) throw r.error;
-  db.teams = (t.data||[]).map(x=>({id:x.id,name:x.name,group:x.group_code,manager:x.manager_name||"",short:x.short_name||""}));
-  db.matches = (m.data||[]).map(x=>({id:x.id,group:x.group_code,round:x.round_label,home:x.home_team_id,away:x.away_team_id,date:x.match_date,venue:x.venue||"",hs:x.home_score||0,as:x.away_score||0,status:x.status}));
-  db.notices = (n.data||[]).map(x=>({id:x.id,text:x.message,date:x.created_at}));
-  db.players = (p.data||[]).map(x=>({id:x.id,team:x.team_id,name:x.player_name,goals:Number(x.goals)||0}));
+  const jobs = [
+    ["teams", () => supabaseApi.from("teams").select("*").order("created_at")],
+    ["matches", () => supabaseApi.from("matches").select("*").order("match_date")],
+    ["notices", () => supabaseApi.from("notices").select("*").order("created_at",{ascending:false})],
+    ["players", () => supabaseApi.from("team_players").select("*").order("goals",{ascending:false})]
+  ];
+  const results = await Promise.allSettled(jobs.map(async ([key, run]) => {
+    const result = await Promise.race([
+      run(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out. Check your internet or Supabase status.")), 12000))
+    ]);
+    if (result.error) throw result.error;
+    return [key, result.data || []];
+  }));
+  const errors = {};
+  results.forEach((r, i) => {
+    const key = jobs[i][0];
+    if (r.status === "fulfilled") db[key] = r.value[1];
+    else errors[key] = r.reason?.message || String(r.reason);
+  });
+  db.teams = (db.teams||[]).map(x=>({id:x.id,name:x.name,group:x.group_code,manager:x.manager_name||"",short:x.short_name||""}));
+  db.matches = (db.matches||[]).map(x=>({id:x.id,group:x.group_code,round:x.round_label,home:x.home_team_id,away:x.away_team_id,date:x.match_date,venue:x.venue||"",hs:x.home_score||0,as:x.away_score||0,status:x.status}));
+  db.notices = (db.notices||[]).map(x=>({id:x.id,text:x.message,date:x.created_at}));
+  db.players = (db.players||[]).map(x=>({id:x.id,team:x.team_id,name:x.player_name,goals:Number(x.goals)||0}));
   render();
+  if (isAdmin) {
+    const targets = {teams:"manageTeams",matches:"manageMatches",notices:"manageNotices",players:"managePlayers"};
+    Object.entries(errors).forEach(([key,msg]) => {
+      const el=document.getElementById(targets[key]);
+      if(el) el.innerHTML='<p class="hint" style="color:#b42318">Could not load '+key+': '+esc(msg)+'</p>';
+    });
+  }
+  if (Object.keys(errors).length) console.warn("Some Supabase tables did not load:", errors);
+  return errors;
 }
 async function save(){try{await loadData()}catch(e){alert("Could not refresh data: "+e.message)}}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[c]))}
@@ -205,6 +227,8 @@ window.adminLogin = async function () {
     isAdmin = true;
     document.getElementById("adminLoginBox").classList.add("hidden");
     document.getElementById("adminTools").classList.remove("hidden");
+    show("Admin login successful. Loading management data...", true);
+    await loadData();
     show("Admin login successful.", true);
   } catch (e) {
     show(e.message || String(e));
@@ -246,6 +270,6 @@ if(isAdmin){
  if(mn)mn.innerHTML=db.notices.map(n=>`<div class="manage-row"><div class="manage-meta"><b>${esc(n.text)}</b><small>${esc(dateText(n.date))}</small></div><div class="manage-actions"><button class="secondary" onclick="editNotice('${String(n.id).replace(/'/g,"\\'")}')">Edit</button><button class="danger" onclick="deleteNotice('${String(n.id).replace(/'/g,"\\'")}')">Delete</button></div></div>`).join("")||'<p class="hint">No announcements published.</p>';
  if(mp)mp.innerHTML=db.players.map(p=>`<div class="manage-row"><div class="manage-meta"><b>${esc(p.name)}</b><small>${esc(team(p.team)?.name||"Unknown team")} · ${p.goals} goal(s)</small></div><div class="manage-actions"><button class="secondary" onclick="editPlayer('${p.id}')">Edit</button><button class="danger" onclick="deletePlayer('${p.id}')">Delete</button></div></div>`).join("")||'<p class="hint">No player records yet.</p>';
 }
-if (supabaseApi) { loadData().catch(e=>{console.error(e); alert("Supabase connection error: "+e.message);}); } else { console.error(supabaseInitError); }
+if (supabaseApi) { loadData().catch(e=>console.error("Supabase data load error:",e)); } else { console.error(supabaseInitError); }
 </script>
 </body></html>
