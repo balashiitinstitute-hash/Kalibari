@@ -73,6 +73,10 @@ footer{text-align:center;color:#8a96a6;font-size:11px;padding:24px}
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+function toggleAdmin(){document.getElementById("adminPanel").classList.toggle("show")}
+function openAdminFromUrl(){if(location.hash==="#admin"){document.getElementById("adminPanel").classList.add("show");}}
+openAdminFromUrl();
+window.addEventListener("hashchange",openAdminFromUrl);
 const SUPABASE_URL = "https://tbsydkiqueetsvnsoeew.supabase.co";
 const SUPABASE_KEY = "sb_publishable_NY6XliqJS6_Xab8IoB9ZOQ_9SJMz4CY";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -95,10 +99,6 @@ async function save(){try{await loadData()}catch(e){alert("Could not refresh dat
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[c]))}
 function team(id){return db.teams.find(t=>t.id===id)}
 function dateText(v){if(!v)return "Date to be announced";let d=new Date(v);return isNaN(d)?v:d.toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"})}
-function toggleAdmin(){document.getElementById("adminPanel").classList.toggle("show")}
-function openAdminFromUrl(){if(location.hash==="#admin"){document.getElementById("adminPanel").classList.add("show");}}
-openAdminFromUrl();
-window.addEventListener("hashchange",openAdminFromUrl);
 async function adminLogin(){const email=document.getElementById("adminEmail").value.trim();const password=document.getElementById("adminPassword").value; if(!email||!password)return alert("Enter admin email and password."); const {data,error}=await supabase.auth.signInWithPassword({email,password}); if(error)return alert(error.message); currentUser=data.user; const {data:row,error:checkError}=await supabase.from("app_admins").select("user_id").eq("user_id",currentUser.id).maybeSingle(); if(checkError||!row){await supabase.auth.signOut();currentUser=null;return alert("This account is not registered as a tournament admin.");} isAdmin=true; document.getElementById("adminLoginBox").classList.add("hidden"); document.getElementById("adminTools").classList.remove("hidden"); alert("Admin login successful.");}
 async function adminLogout(){await supabase.auth.signOut();currentUser=null;isAdmin=false;document.getElementById("adminLoginBox").classList.remove("hidden");document.getElementById("adminTools").classList.add("hidden");}
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));document.getElementById(b.dataset.tab).classList.remove("hidden")});
