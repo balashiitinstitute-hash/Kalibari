@@ -36,6 +36,92 @@ body{background:#f4f7fb;color:#142238}header{background:linear-gradient(115deg,#
 .player-player-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #edf1f5}
 .player-player-row:last-child{border-bottom:0}.player-player-row small{display:block;color:#718096;margin-top:3px}
 @media(max-width:520px){.player-player-row{align-items:flex-start;flex-direction:column}.player-player-row .manage-actions{width:100%}}
+
+/* PREMIUM LEAGUE THEME — NAVY / GOLD / WHITE */
+:root{
+ --navy:#071629;
+ --navy2:#102b4c;
+ --panel:#17395f;
+ --gold:#e7b84b;
+ --bg:#f5f7fb;
+ --ink:#14243a;
+ --muted:#718096;
+ --line:#e5eaf1;
+ --green:#16865b;
+}
+body{background:#f4f6fa;color:#14243a}
+header{
+ background:linear-gradient(120deg,#061326 0%,#102b4c 58%,#173d63 100%);
+ color:#fff;padding:25px max(18px,calc((100% - 1080px)/2)) 28px;
+ box-shadow:0 10px 30px #07162925;position:relative;overflow:hidden
+}
+header:after{
+ content:"";position:absolute;width:300px;height:300px;border:1px solid #e7b84b30;
+ border-radius:50%;right:-100px;top:-180px;box-shadow:0 0 0 28px #e7b84b0a,0 0 0 58px #e7b84b08;
+ pointer-events:none
+}
+.brand{position:relative;z-index:1}
+.crest{
+ background:linear-gradient(145deg,#f7d77f,#d9a936);color:#10233d;
+ border:2px solid #fff4d5;border-radius:14px;box-shadow:0 5px 16px #0004
+}
+h1{font-weight:900;letter-spacing:1.1px}
+.sub{color:#d8c28e;letter-spacing:2px}
+.admin{background:#17395f;border-color:#46617e}
+main{max-width:1080px}
+.hero{
+ position:relative;overflow:hidden;
+ background:linear-gradient(115deg,#0a1d34 0%,#153b60 70%,#1b4c70 100%);
+ border:1px solid #244b70;border-radius:20px;color:#fff;padding:28px;
+ box-shadow:0 14px 32px #0b213a20
+}
+.hero:after{
+ content:"K";position:absolute;right:24px;bottom:-48px;font-size:190px;line-height:1;
+ font-weight:950;color:#ffffff09;pointer-events:none
+}
+.kicker{color:#e7c879;font-weight:900;letter-spacing:2px}
+.hero h2{position:relative;z-index:1;color:#fff}
+.hero p{position:relative;z-index:1;color:#c5d2e1}
+.stat,.card{
+ background:#fff;border:1px solid #e5eaf1;border-radius:16px;
+ box-shadow:0 5px 18px #14243a09
+}
+.stat b{color:#102b4c}
+.stat span{color:#718096}
+nav button{
+ background:#fff;border:1px solid #e2e8f0;color:#42536a;border-radius:11px;
+ padding:11px 15px;font-weight:800
+}
+nav button.active{
+ background:#102b4c;color:#f5d27b;border-color:#102b4c;
+ box-shadow:0 5px 14px #102b4c25
+}
+.section-head h3,.panel h3{color:#122b48}
+.panel{
+ background:#fff;border:1px solid #e3e9f0;border-radius:18px;
+ box-shadow:0 12px 30px #14243a0d
+}
+.primary{
+ background:linear-gradient(120deg,#102b4c,#1a456b);color:#fff;
+ box-shadow:0 5px 13px #102b4c22
+}
+.primary:hover{filter:brightness(1.1)}
+.secondary{background:#eef2f7;color:#183653}
+.danger{background:#fff0ee;color:#ad3028}
+.pill{background:#f7f0dc;color:#80601d;border:1px solid #f0dfb2}
+.badge{background:#f8f1df;color:#795d20}
+.table th{background:#f5f1e7;color:#6f5928}
+.notice{border-left-color:#e7b84b;background:#fff9e9;color:#6d5520}
+.admin-section{border:1px solid #e5eaf1;background:linear-gradient(180deg,#fff,#fbfcfe);border-radius:15px}
+.admin-chip{color:#795d20;background:#fbf3dc}
+input:focus,select:focus,textarea:focus{outline:3px solid #d8ae4a24;border-color:#c49a3b}
+footer{color:#8a96a6}
+@media(max-width:650px){
+ header{padding-top:20px;padding-bottom:22px}
+ .hero{padding:22px}
+ .hero:after{font-size:130px;right:8px;bottom:-30px}
+}
+
 </style>
 </head>
 <body>
