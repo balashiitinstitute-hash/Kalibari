@@ -84,6 +84,36 @@ footer{text-align:center;color:#8a96a6;font-size:11px;padding:24px}
   window.addEventListener("hashchange", syncAdminPanel);
 })();
 </script>
+<script>
+/* Core navigation: deliberately independent from Supabase and the main app script. */
+(function () {
+  function activateTab(tabId, button) {
+    var tabs = document.querySelectorAll(".tab");
+    var buttons = document.querySelectorAll("#nav button");
+    tabs.forEach(function (tab) { tab.classList.add("hidden"); });
+    buttons.forEach(function (btn) { btn.classList.remove("active"); });
+    var target = document.getElementById(tabId);
+    if (target) target.classList.remove("hidden");
+    if (button) button.classList.add("active");
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("#nav button").forEach(function (button) {
+      button.addEventListener("click", function () {
+        activateTab(button.getAttribute("data-tab"), button);
+      });
+    });
+    var panel = document.getElementById("adminPanel");
+    function syncAdmin() {
+      if (!panel) return;
+      if (location.hash === "#admin") panel.classList.add("show");
+      else panel.classList.remove("show");
+    }
+    syncAdmin();
+    window.addEventListener("hashchange", syncAdmin);
+  });
+  window.activateTournamentTab = activateTab;
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://tbsydkiqueetsvnsoeew.supabase.co";
@@ -158,7 +188,7 @@ window.adminLogin = async function () {
   }
 };
 async function adminLogout(){await supabase.auth.signOut();currentUser=null;isAdmin=false;document.getElementById("adminLoginBox").classList.remove("hidden");document.getElementById("adminTools").classList.add("hidden");}
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));document.getElementById(b.dataset.tab).classList.remove("hidden")});
+/* Navigation is initialized in the independent core script above. */
 async function addTeam(){if(!isAdmin)return alert("Admin login required.");let n=document.getElementById("teamName").value.trim();if(!n)return alert("Enter a team name");const {error}=await supabase.from("teams").insert({name:n,group_code:document.getElementById("teamGroup").value,manager_name:document.getElementById("managerName").value.trim()||null,short_name:document.getElementById("teamShort").value.trim()||null});if(error)return alert(error.message);["teamName","managerName","teamShort"].forEach(id=>document.getElementById(id).value="");await save();}
 async function addMatch(){if(!isAdmin)return alert("Admin login required.");let h=document.getElementById("homeTeam").value,a=document.getElementById("awayTeam").value;if(!h||!a||h===a)return alert("Choose two different teams");const {error}=await supabase.from("matches").insert({group_code:document.getElementById("matchGroup").value,round_label:document.getElementById("round").value||"Group Match",home_team_id:h,away_team_id:a,match_date:document.getElementById("matchDate").value||null,venue:document.getElementById("venue").value||null,home_score:0,away_score:0,status:"upcoming"});if(error)return alert(error.message);await save();}
 async function updateScore(){if(!isAdmin)return alert("Admin login required.");let id=document.getElementById("scoreMatch").value;if(!id)return alert("Create a fixture first");const {error}=await supabase.from("matches").update({home_score:Math.max(0,+document.getElementById("homeScore").value||0),away_score:Math.max(0,+document.getElementById("awayScore").value||0),status:document.getElementById("matchStatus").value}).eq("id",id);if(error)return alert(error.message);await save();}
