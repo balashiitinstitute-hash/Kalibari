@@ -236,6 +236,26 @@ hr{border-top-color:#34384f!important}
   nav button{padding:10px 13px}
 }
 
+
+/* MATCH MOMENTS GALLERY */
+.moments-section{margin-top:30px;padding:20px 0;overflow:hidden}
+.moments-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.moments-heading h3{margin:0;color:#172038;font-size:20px}
+.moments-heading span{color:#718096;font-size:12px}
+.moments-viewport{overflow:hidden;width:100%;border-radius:16px;-webkit-mask-image:linear-gradient(to right,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(to right,transparent,#000 4%,#000 96%,transparent)}
+.moments-track{display:flex;width:max-content;gap:14px;animation:momentsScroll 45s linear infinite;will-change:transform}
+.moments-track:hover{animation-play-state:paused}
+.moment-item{height:175px;width:auto;flex:0 0 auto;overflow:hidden;border-radius:13px;background:#20243a;border:1px solid #ffffff25}
+.moment-item img{display:block;height:100%;width:auto;max-width:none;object-fit:cover}
+.moments-empty{padding:25px;text-align:center;color:#718096;background:#fff;border:1px dashed #cbd5e1;border-radius:13px}
+.moments-admin-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:14px}
+.moment-admin-item{position:relative;height:105px;overflow:hidden;border-radius:10px;background:#111526}
+.moment-admin-item img{width:100%;height:100%;object-fit:cover}
+.moment-admin-item button{position:absolute;top:5px;right:5px;padding:5px 8px;border:0;border-radius:7px;background:#b42318;color:#fff;cursor:pointer}
+@keyframes momentsScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(max-width:650px){.moment-item{height:125px}.moments-section{margin-top:22px}.moments-heading h3{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.moments-track{animation:none}}
+
 </style>
 </head>
 <body>
@@ -255,6 +275,13 @@ hr{border-top-color:#34384f!important}
 <div id="standings" class="tab hidden"><div class="section-head"><h3>Group Standings</h3><span class="hint">Auto-calculated from results</span></div><div id="standingList"></div></div>
 <div id="results" class="tab hidden"><div class="section-head"><h3>Match Results</h3><span class="hint">Completed matches</span></div><div id="resultList"></div></div><div id="players" class="tab hidden"><div class="section-head"><h3>Golden Boot · Top Scorers</h3><span class="hint">Player goals across the tournament</span></div><div id="topScorers"></div></div>
 <div id="updates" class="tab hidden"><div class="section-head"><h3>Tournament Updates</h3></div><div id="noticeList"></div></div>
+<!-- MATCH MOMENTS PUBLIC GALLERY -->
+<section class="moments-section" id="matchMoments">
+  <div class="moments-heading"><h3>📸 Match Moments</h3><span>Memories from the tournament</span></div>
+  <div class="moments-viewport"><div id="momentsTrack" class="moments-track"></div></div>
+  <div id="momentsEmpty" class="moments-empty">Match photos will appear here soon.</div>
+</section>
+
 
 <section id="adminPanel" class="panel">
  <div class="section-head"><h3>Admin Workspace</h3><button class="secondary" onclick="toggleAdmin()">Close</button></div>
@@ -295,6 +322,14 @@ hr{border-top-color:#34384f!important}
  <div class="formgrid"><div class="field"><label>Team</label><select id="playerTeam"></select></div><div class="field"><label>Player name</label><input id="playerName" placeholder="Player full name"></div><div class="field"><label>Total goals</label><input id="playerGoals" type="number" min="0" value="0"></div></div>
  <button class="primary" onclick="addPlayer()">＋ Add Player</button><div class="admin-section"><div class="admin-title"><h3>Manage Player Goals</h3><span class="admin-chip">ADMIN ONLY</span></div><div id="managePlayers"></div></div>
  <h3>Publish Announcement</h3><div class="field"><label>Announcement</label><textarea id="noticeText" rows="3" placeholder="Write a tournament update..."></textarea></div><button class="primary" onclick="addNotice()">Publish Update</button>
+ <div class="admin-section">
+  <div class="admin-title"><h3>📸 Manage Match Moments</h3><span class="admin-chip">ADMIN ONLY</span></div>
+  <div class="field"><label>Select Match Photos</label><input id="momentFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple><p class="hint">JPG, PNG or WebP · Maximum 5 MB per image</p></div>
+  <button class="primary" id="uploadMomentsButton" type="button" onclick="uploadMatchMoments()">Upload Photos</button>
+  <p id="momentsUploadStatus" class="hint" style="margin-top:10px" role="status"></p>
+  <div id="momentsAdminList" class="moments-admin-list"></div>
+ </div>
+
  <div class="admin-section"><div class="admin-title"><h3>Manage Teams</h3><span class="admin-chip">ADMIN ONLY</span></div><div id="manageTeams"><p class="hint">Loading teams...</p></div></div>
  <div class="admin-section"><div class="admin-title"><h3>Manage Fixtures & Results</h3><span class="admin-chip">ADMIN ONLY</span></div><div id="manageMatches"><p class="hint">Loading fixtures...</p></div></div>
  <div class="admin-section"><div class="admin-title"><h3>Manage Announcements</h3><span class="admin-chip">ADMIN ONLY</span></div><div id="manageNotices"><p class="hint">Loading announcements...</p></div></div>
@@ -402,6 +437,7 @@ async function loadData(){
   db.notices = (db.notices||[]).map(x=>({id:x.id,text:x.message,date:x.created_at}));
   db.players = (db.players||[]).map(x=>({id:x.id,team:x.team_id,name:x.player_name,goals:Number(x.goals)||0}));
   render();
+  loadMatchMoments().catch(e => console.error("Match Moments loading error:", e));
   if (isAdmin) {
     const targets = {teams:"manageTeams",matches:"manageMatches",notices:"manageNotices",players:"managePlayers"};
     Object.entries(errors).forEach(([key,msg]) => {
@@ -627,6 +663,106 @@ if(isAdmin){
   }).join("")||'<p class="hint">No teams added yet.</p>';
  }
 }
+}
+
+
+/* ==================================
+   MATCH MOMENTS - SUPABASE STORAGE
+================================== */
+const MOMENTS_BUCKET = "match-moments";
+let matchMoments = [];
+let momentsLoadInProgress = false;
+
+async function loadMatchMoments() {
+  if (!supabaseApi || momentsLoadInProgress) return;
+  momentsLoadInProgress = true;
+  try {
+    const { data, error } = await supabaseApi.storage.from(MOMENTS_BUCKET).list("", {
+      limit: 200, sortBy: { column: "created_at", order: "desc" }
+    });
+    if (error) throw error;
+    matchMoments = (data || []).filter(file => file.name && !file.name.startsWith("."))
+      .map(file => {
+        const { data: publicData } = supabaseApi.storage.from(MOMENTS_BUCKET).getPublicUrl(file.name);
+        return { name: file.name, url: publicData.publicUrl };
+      });
+    renderMatchMoments();
+  } catch (error) {
+    console.error("Could not load Match Moments:", error.message || error);
+    const empty = document.getElementById("momentsEmpty");
+    if (empty && !matchMoments.length) {
+      empty.textContent = "Match photos are temporarily unavailable.";
+      empty.classList.remove("hidden");
+    }
+  } finally {
+    momentsLoadInProgress = false;
+  }
+}
+
+function renderMatchMoments() {
+  const track = document.getElementById("momentsTrack");
+  const empty = document.getElementById("momentsEmpty");
+  const adminList = document.getElementById("momentsAdminList");
+  if (!track) return;
+  if (!matchMoments.length) {
+    track.innerHTML = "";
+    if (empty) { empty.textContent = "Match photos will appear here soon."; empty.classList.remove("hidden"); }
+  } else {
+    if (empty) empty.classList.add("hidden");
+    const images = matchMoments.map(photo => `<div class="moment-item"><img src="${esc(photo.url)}" alt="Knight Football match moment" loading="lazy"></div>`).join("");
+    track.innerHTML = images + images;
+  }
+  if (adminList && isAdmin) {
+    adminList.innerHTML = matchMoments.map(photo => `<div class="moment-admin-item"><img src="${esc(photo.url)}" alt="Match photo"><button type="button" onclick="deleteMatchMoment('${encodeURIComponent(photo.name)}')" title="Delete photo" aria-label="Delete photo">×</button></div>`).join("") || '<p class="hint">No match photos uploaded yet.</p>';
+  }
+}
+
+async function uploadMatchMoments() {
+  if (!isAdmin || !currentUser) return alert("Admin login required.");
+  const input = document.getElementById("momentFiles");
+  const status = document.getElementById("momentsUploadStatus");
+  const button = document.getElementById("uploadMomentsButton");
+  const files = Array.from(input.files || []);
+  if (!files.length) return alert("Please select at least one image.");
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  for (const file of files) {
+    if (!allowed.includes(file.type)) return alert(file.name + ": only JPG, PNG and WebP images are allowed.");
+    if (file.size > 5 * 1024 * 1024) return alert(file.name + " exceeds the 5 MB limit.");
+  }
+  button.disabled = true;
+  status.textContent = "Uploading photos...";
+  let uploaded = 0;
+  const errors = [];
+  try {
+    for (const file of files) {
+      const extension = file.name.split(".").pop().toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const fileName = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
+      const { error } = await supabaseApi.storage.from(MOMENTS_BUCKET).upload(fileName, file, {
+        cacheControl: "3600", contentType: file.type, upsert: false
+      });
+      if (error) errors.push(file.name + ": " + error.message);
+      else uploaded++;
+    }
+    input.value = "";
+    await loadMatchMoments();
+    status.textContent = uploaded + " photo(s) uploaded." + (errors.length ? " Failed: " + errors.join(" | ") : "");
+    if (uploaded && !errors.length) alert(uploaded + " match photo(s) uploaded successfully.");
+    else if (errors.length) alert("Uploaded: " + uploaded + "\nErrors: " + errors.join("\n"));
+  } catch (error) {
+    status.textContent = error.message || String(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function deleteMatchMoment(encodedName) {
+  if (!isAdmin || !currentUser) return alert("Admin login required.");
+  const name = decodeURIComponent(encodedName);
+  if (!confirm("Delete this match photo permanently?")) return;
+  const { error } = await supabaseApi.storage.from(MOMENTS_BUCKET).remove([name]);
+  if (error) return alert("Photo deletion failed: " + error.message);
+  await loadMatchMoments();
+  alert("Photo deleted successfully.");
 }
 
 if (supabaseApi) { loadData().catch(e=>console.error("Supabase data load error:",e)); } else { console.error(supabaseInitError); }
