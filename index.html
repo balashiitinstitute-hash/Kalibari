@@ -27,6 +27,15 @@ body{background:#f4f7fb;color:#142238}header{background:linear-gradient(115deg,#
 
 
 .team-card{display:block;cursor:pointer}.team-card .team{width:100%}.team-card .team-name{color:#143452}.team-card .team-name:hover{text-decoration:underline}.team-player-details{display:none;border-top:1px solid var(--line);margin-top:12px;padding-top:10px}.team-player-details.open{display:block}.team-player-line{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;font-size:13px;border-bottom:1px solid #f0f3f6}.team-player-line:last-child{border-bottom:0}.player-entry{display:grid;grid-template-columns:minmax(0,1fr) 100px auto;gap:8px;align-items:center;margin-bottom:8px}.player-entry input{min-width:0}.player-entry .remove-player{padding:9px 11px}@media(max-width:500px){.player-entry{grid-template-columns:minmax(0,1fr) 75px auto;gap:5px}}
+
+.player-team-group{border:1px solid #e7edf4;border-radius:12px;margin:9px 0;overflow:hidden;background:#fff}
+.player-team-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border:0;background:#f8fafc;color:#172338;text-align:left;font:inherit;cursor:pointer}
+.player-team-toggle b{font-size:14px}.player-team-toggle small{display:block;color:#718096;font-size:11px;margin-top:3px}
+.player-team-toggle .team-chevron{font-size:18px;color:#718096}
+.player-team-members{padding:0 14px 8px;border-top:1px solid #edf1f5}
+.player-player-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #edf1f5}
+.player-player-row:last-child{border-bottom:0}.player-player-row small{display:block;color:#718096;margin-top:3px}
+@media(max-width:520px){.player-player-row{align-items:flex-start;flex-direction:column}.player-player-row .manage-actions{width:100%}}
 </style>
 </head>
 <body>
@@ -353,6 +362,14 @@ async function addMatch(){if(!isAdmin)return alert("Admin login required.");let 
 async function updateScore(){if(!isAdmin)return alert("Admin login required.");let id=document.getElementById("scoreMatch").value;if(!id)return alert("Create a fixture first");const {error}=await supabaseApi.from("matches").update({home_score:Math.max(0,+document.getElementById("homeScore").value||0),away_score:Math.max(0,+document.getElementById("awayScore").value||0),status:document.getElementById("matchStatus").value}).eq("id",id);if(error)return alert(error.message);await save();}
 async function addNotice(){if(!isAdmin)return alert("Admin login required.");let t=document.getElementById("noticeText").value.trim();if(!t)return;const {error}=await supabaseApi.from("notices").insert({message:t});if(error)return alert(error.message);document.getElementById("noticeText").value="";await save();}
 async function addPlayer(){if(!isAdmin)return alert("Admin login required.");const teamId=document.getElementById("playerTeam").value,name=document.getElementById("playerName").value.trim(),goals=Math.max(0,Number(document.getElementById("playerGoals").value)||0);if(!teamId||!name)return alert("Select a team and enter player name.");const {error}=await supabaseApi.from("team_players").insert({team_id:teamId,player_name:name,goals});if(error)return alert("Player save failed: "+error.message);document.getElementById("playerName").value="";document.getElementById("playerGoals").value="0";await save();}
+function toggleManageTeamPlayers(teamId){
+ const box=document.getElementById("playerTeamMembers-"+teamId);
+ const icon=document.getElementById("playerTeamChevron-"+teamId);
+ if(!box)return;
+ const opening=box.classList.contains("hidden");
+ box.classList.toggle("hidden",!opening);
+ if(icon)icon.textContent=opening?"−":"＋";
+}
 async function editPlayer(id){if(!isAdmin)return alert("Admin login required.");const p=db.players.find(x=>x.id===id);if(!p)return;const name=prompt("Player name:",p.name);if(name===null)return;if(!name.trim())return alert("Player name cannot be empty.");const goals=prompt("Total goals:",p.goals);if(goals===null)return;if(!/^\d+$/.test(goals.trim()))return alert("Goals must be a whole number.");const {error}=await supabaseApi.from("team_players").update({player_name:name.trim(),goals:Number(goals)}).eq("id",id);if(error)return alert("Player update failed: "+error.message);await save();}
 async function deletePlayer(id){if(!isAdmin||!confirm("Delete this player record?"))return;const {error}=await supabaseApi.from("team_players").delete().eq("id",id);if(error)return alert("Player delete failed: "+error.message);await save();}
 async function editTeam(id){
@@ -394,7 +411,21 @@ if(isAdmin){
  if(mt)mt.innerHTML=db.teams.map(t=>`<div class="manage-row"><div class="manage-meta"><b>${esc(t.name)}</b><small>Group ${esc(t.group)}${t.manager?" · "+esc(t.manager):""}</small></div><div class="manage-actions"><button class="secondary" onclick="editTeam('${String(t.id).replace(/'/g,"\\'")}')">Edit</button><button class="danger" onclick="deleteTeam('${String(t.id).replace(/'/g,"\\'")}')">Delete</button></div></div>`).join("")||'<p class="hint">No teams added.</p>';
  if(mm)mm.innerHTML=db.matches.map(m=>`<div class="manage-row"><div class="manage-meta"><b>${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")}</b><small>${esc(m.group)} · ${esc(m.round)} · ${esc(m.status)} · ${esc(dateText(m.date))}</small></div><div class="manage-actions"><button class="secondary" onclick="editMatch('${String(m.id).replace(/'/g,"\\'")}')">Edit</button><button class="danger" onclick="deleteMatch('${String(m.id).replace(/'/g,"\\'")}')">Delete</button></div></div>`).join("")||'<p class="hint">No fixtures created.</p>';
  if(mn)mn.innerHTML=db.notices.map(n=>`<div class="manage-row"><div class="manage-meta"><b>${esc(n.text)}</b><small>${esc(dateText(n.date))}</small></div><div class="manage-actions"><button class="secondary" onclick="editNotice('${String(n.id).replace(/'/g,"\\'")}')">Edit</button><button class="danger" onclick="deleteNotice('${String(n.id).replace(/'/g,"\\'")}')">Delete</button></div></div>`).join("")||'<p class="hint">No announcements published.</p>';
- if(mp)mp.innerHTML=db.players.map(p=>`<div class="manage-row"><div class="manage-meta"><b>${esc(p.name)}</b><small>${esc(team(p.team)?.name||"Unknown team")} · ${p.goals} goal(s)</small></div><div class="manage-actions"><button class="secondary" onclick="editPlayer('${p.id}')">Edit</button><button class="danger" onclick="deletePlayer('${p.id}')">Delete</button></div></div>`).join("")||'<p class="hint">No player records yet.</p>';
+ if(mp){
+  mp.innerHTML=db.teams.map(t=>{
+   const members=db.players.filter(p=>p.team===t.id).sort((a,b)=>a.name.localeCompare(b.name));
+   const safeId=String(t.id).replace(/'/g,"\\'");
+   return `<div class="player-team-group">
+    <button type="button" class="player-team-toggle" onclick="toggleManageTeamPlayers('${safeId}')">
+     <span><b>${esc(t.name)}</b><small>${members.length} player(s) · Group ${esc(t.group)}</small></span>
+     <span class="team-chevron" id="playerTeamChevron-${esc(t.id)}">＋</span>
+    </button>
+    <div class="player-team-members hidden" id="playerTeamMembers-${esc(t.id)}">
+     ${members.length?members.map(p=>`<div class="player-player-row"><div><b>${esc(p.name)}</b><small>${p.goals} goal(s)</small></div><div class="manage-actions"><button class="secondary" onclick="editPlayer('${String(p.id).replace(/'/g,"\\'")}')">Edit Goals</button><button class="danger" onclick="deletePlayer('${String(p.id).replace(/'/g,"\\'")}')">Delete</button></div></div>`).join(""):'<p class="hint">No players added for this team yet.</p>'}
+    </div>
+   </div>`;
+  }).join("")||'<p class="hint">No teams added yet.</p>';
+ }
 }
 }
 
