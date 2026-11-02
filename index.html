@@ -50,7 +50,7 @@ body{background:#f4f7fb;color:#142238}header{background:linear-gradient(115deg,#
 <section id="adminPanel" class="panel">
  <div class="section-head"><h3>Admin Workspace</h3><button class="secondary" onclick="toggleAdmin()">Close</button></div>
  <div class="notice"><b>Connected mode:</b> Public visitors can view tournament data. Only the authenticated admin account registered in app_admins can make changes.</div>
- <div id="adminLoginBox"><h3>Admin Login</h3><div class="formgrid"><div class="field"><label>Admin email</label><input id="adminEmail" type="email" placeholder="Your Supabase Auth email"></div><div class="field"><label>Password</label><input id="adminPassword" type="password" placeholder="Your password"></div></div><button id="loginButton" class="primary" type="button">Login</button><p id="loginStatus" role="status" style="font-size:13px;margin-top:10px;color:#52647c"></p></div><div id="adminTools" class="hidden"><div class="actions"><button class="secondary" onclick="adminLogout()">Logout</button></div><h3>Add Team</h3><div class="formgrid">
+ <div id="adminLoginBox"><h3>Admin Login</h3><div class="formgrid"><div class="field"><label>Admin email</label><input id="adminEmail" type="email" placeholder="Your Supabase Auth email"></div><div class="field"><label>Password</label><input id="adminPassword" type="password" placeholder="Your password"></div></div><button id="loginButton" class="primary" type="button">Login</button><p id="loginStatus" role="status" style="font-size:13px;margin-top:10px;color:#52647c"></p></div><div id="adminTools" class="hidden"><div class="actions"><button class="secondary" onclick="adminLogout()">Logout</button></div><h3 id="teamFormTitle">Add Team</h3><div class="formgrid">
   <div class="field"><label>Team name</label><input id="teamName" placeholder="e.g. Balashi United"></div>
   <div class="field"><label>Group</label><select id="teamGroup"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
   <div class="field"><label>Manager name (optional)</label><input id="managerName" placeholder="Team manager"></div>
@@ -64,7 +64,7 @@ body{background:#f4f7fb;color:#142238}header{background:linear-gradient(115deg,#
   <button type="button" class="secondary" onclick="addNewTeamPlayerRow()">＋ Add Another Player</button>
   <p class="hint" style="margin-top:7px">প্রতিটি খেলোয়াড়ের নাম লিখুন। গোল না থাকলে 0 রাখুন।</p>
  </div>
- <button class="primary" onclick="addTeam()">＋ Add Team</button>
+ <div class="actions"><button id="saveTeamButton" class="primary" type="button" onclick="saveTeamForm()">＋ Add Team</button><button id="cancelTeamEdit" class="secondary hidden" type="button" onclick="cancelTeamEdit()">Cancel Edit</button></div>
  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
  <h3>Add Fixture</h3><div class="formgrid">
   <div class="field"><label>Group</label><select id="matchGroup"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
@@ -254,7 +254,8 @@ async function adminLogout(){await supabaseApi.auth.signOut();currentUser=null;i
 function addNewTeamPlayerRow(name="",goals=0){
  const wrap=document.getElementById("newTeamPlayers"); if(!wrap)return;
  const row=document.createElement("div"); row.className="player-entry";
- row.innerHTML='<input class="new-player-name" placeholder="Player name"><input class="new-player-goals" type="number" min="0" step="1" value="0" placeholder="Goals" aria-label="Player goals"><button type="button" class="danger remove-player" title="Remove player">×</button>';
+ row.innerHTML='<input class="existing-player-id" type="hidden"><input class="new-player-name" placeholder="Player name"><input class="new-player-goals" type="number" min="0" step="1" value="0" placeholder="Goals" aria-label="Player goals"><button type="button" class="danger remove-player" title="Remove player">×</button>';
+ row.querySelector(".existing-player-id").value=arguments.length>2?(arguments[2]||""):"";
  row.querySelector(".new-player-name").value=name;
  row.querySelector(".new-player-goals").value=goals;
  row.querySelector(".remove-player").addEventListener("click",()=>removeNewTeamPlayer(row.querySelector(".remove-player")));
@@ -266,33 +267,87 @@ function removeNewTeamPlayer(button){
  if(wrap.querySelectorAll(".player-entry").length===1){row.querySelector(".new-player-name").value="";row.querySelector(".new-player-goals").value="0";}
  else row.remove();
 }
-async function addTeam(){
+let editingTeamId = null;
+function setTeamFormMode(editing){
+ const title=document.getElementById("teamFormTitle");
+ const button=document.getElementById("saveTeamButton");
+ const cancel=document.getElementById("cancelTeamEdit");
+ if(title)title.textContent=editing?"Edit Team":"Add Team";
+ if(button)button.textContent=editing?"Save Team Changes":"＋ Add Team";
+ if(cancel)cancel.classList.toggle("hidden",!editing);
+}
+function cancelTeamEdit(){
+ editingTeamId=null;
+ ["teamName","managerName","teamShort"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("teamGroup").value="A";
+ document.getElementById("newTeamPlayers").innerHTML="";
+ addNewTeamPlayerRow();
+ setTeamFormMode(false);
+}
+async function saveTeamForm(){
  if(!isAdmin)return alert("Admin login required.");
- const n=document.getElementById("teamName").value.trim(); if(!n)return alert("Enter a team name");
+ const n=document.getElementById("teamName").value.trim();
+ if(!n)return alert("Enter a team name");
  const players=[];
  for(const row of document.querySelectorAll("#newTeamPlayers .player-entry")){
-  const name=row.querySelector(".new-player-name").value.trim(), raw=row.querySelector(".new-player-goals").value;
-  if(!name){if(raw!==""&&Number(raw)!==0)return alert("Enter a player name or remove that empty row.");continue;}
-  if(raw!==""&&!/^\\d+$/.test(raw))return alert("Player goals must be a whole number (0 or more).");
-  players.push({player_name:name,goals:Number(raw)||0});
+  const name=row.querySelector(".new-player-name").value.trim();
+  const raw=row.querySelector(".new-player-goals").value;
+  const playerId=row.querySelector(".existing-player-id")?.value||"";
+  if(!name){
+   if(playerId)return alert("An existing player name cannot be empty. Remove that player row if you want to delete it.");
+   if(raw!==""&&Number(raw)!==0)return alert("Enter a player name or remove that empty row.");
+   continue;
+  }
+  if(raw!==""&&!/^\d+$/.test(raw))return alert("Player goals must be a whole number (0 or more).");
+  players.push({id:playerId||null,player_name:name,goals:Number(raw)||0});
  }
- const button=document.querySelector('#adminTools button[onclick="addTeam()"]');
- if(button){button.disabled=true;button.textContent="Saving team...";}
+ const wasEditing=!!editingTeamId;
+ const button=document.getElementById("saveTeamButton");
+ if(button){button.disabled=true;button.textContent=editingTeamId?"Saving changes...":"Saving team...";}
  try{
-  const {data:created,error}=await supabaseApi.from("teams").insert({name:n,group_code:document.getElementById("teamGroup").value,manager_name:document.getElementById("managerName").value.trim()||null,short_name:document.getElementById("teamShort").value.trim()||null}).select("id").single();
-  if(error)throw error;
-  if(players.length){
-   const {error:playerError}=await supabaseApi.from("team_players").insert(players.map(p=>({...p,team_id:created.id})));
-   if(playerError){
-    const {error:cleanupError}=await supabaseApi.from("teams").delete().eq("id",created.id);
-    throw new Error("Saving players failed: "+playerError.message+(cleanupError?" The team was created but could not be rolled back.":" The newly created team was rolled back."));
+  const teamPayload={
+   name:n,
+   group_code:document.getElementById("teamGroup").value,
+   manager_name:document.getElementById("managerName").value.trim()||null,
+   short_name:document.getElementById("teamShort").value.trim()||null
+  };
+  let teamId=editingTeamId;
+  if(editingTeamId){
+   const {error}=await supabaseApi.from("teams").update(teamPayload).eq("id",editingTeamId);
+   if(error)throw new Error("Team update failed: "+error.message);
+   const existing=db.players.filter(p=>p.team===editingTeamId);
+   const keepIds=players.filter(p=>p.id).map(p=>p.id);
+   const removed=existing.filter(p=>!keepIds.includes(p.id));
+   if(removed.length){
+    const {error}=await supabaseApi.from("team_players").delete().in("id",removed.map(p=>p.id));
+    if(error)throw new Error("Team details updated, but removing deleted players failed: "+error.message);
+   }
+   for(const p of players){
+    if(p.id){
+     const {error}=await supabaseApi.from("team_players").update({player_name:p.player_name,goals:p.goals}).eq("id",p.id).eq("team_id",teamId);
+     if(error)throw new Error("Team details updated, but player update failed: "+error.message);
+    }else{
+     const {error}=await supabaseApi.from("team_players").insert({team_id:teamId,player_name:p.player_name,goals:p.goals});
+     if(error)throw new Error("Team details updated, but adding a player failed: "+error.message);
+    }
+   }
+  }else{
+   const {data:created,error}=await supabaseApi.from("teams").insert(teamPayload).select("id").single();
+   if(error)throw error;
+   teamId=created.id;
+   if(players.length){
+    const {error:playerError}=await supabaseApi.from("team_players").insert(players.map(p=>({team_id:teamId,player_name:p.player_name,goals:p.goals})));
+    if(playerError){
+     const {error:cleanupError}=await supabaseApi.from("teams").delete().eq("id",teamId);
+     throw new Error("Saving players failed: "+playerError.message+(cleanupError?" The team was created but could not be rolled back.":" The newly created team was rolled back."));
+    }
    }
   }
-  ["teamName","managerName","teamShort"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("newTeamPlayers").innerHTML=""; addNewTeamPlayerRow();
-  await save(); alert("Team"+(players.length?" and "+players.length+" player(s)":"")+" added successfully.");
+  cancelTeamEdit();
+  await save();
+  alert(wasEditing?"Team updated successfully.":"Team added successfully.");
  }catch(error){alert(error.message||String(error));}
- finally{if(button){button.disabled=false;button.textContent="＋ Add Team";}}
+ finally{if(button){button.disabled=false;button.textContent=editingTeamId?"Save Team Changes":"＋ Add Team";}}
 }
 async function addMatch(){if(!isAdmin)return alert("Admin login required.");let h=document.getElementById("homeTeam").value,a=document.getElementById("awayTeam").value;if(!h||!a||h===a)return alert("Choose two different teams");const {error}=await supabaseApi.from("matches").insert({group_code:document.getElementById("matchGroup").value,round_label:document.getElementById("round").value||"Group Match",home_team_id:h,away_team_id:a,match_date:dhakaDateTimeToISO(document.getElementById("matchDate").value),venue:document.getElementById("venue").value||null,home_score:0,away_score:0,status:"upcoming"});if(error)return alert(error.message);await save();}
 async function updateScore(){if(!isAdmin)return alert("Admin login required.");let id=document.getElementById("scoreMatch").value;if(!id)return alert("Create a fixture first");const {error}=await supabaseApi.from("matches").update({home_score:Math.max(0,+document.getElementById("homeScore").value||0),away_score:Math.max(0,+document.getElementById("awayScore").value||0),status:document.getElementById("matchStatus").value}).eq("id",id);if(error)return alert(error.message);await save();}
@@ -300,7 +355,22 @@ async function addNotice(){if(!isAdmin)return alert("Admin login required.");let
 async function addPlayer(){if(!isAdmin)return alert("Admin login required.");const teamId=document.getElementById("playerTeam").value,name=document.getElementById("playerName").value.trim(),goals=Math.max(0,Number(document.getElementById("playerGoals").value)||0);if(!teamId||!name)return alert("Select a team and enter player name.");const {error}=await supabaseApi.from("team_players").insert({team_id:teamId,player_name:name,goals});if(error)return alert("Player save failed: "+error.message);document.getElementById("playerName").value="";document.getElementById("playerGoals").value="0";await save();}
 async function editPlayer(id){if(!isAdmin)return alert("Admin login required.");const p=db.players.find(x=>x.id===id);if(!p)return;const name=prompt("Player name:",p.name);if(name===null)return;if(!name.trim())return alert("Player name cannot be empty.");const goals=prompt("Total goals:",p.goals);if(goals===null)return;if(!/^\d+$/.test(goals.trim()))return alert("Goals must be a whole number.");const {error}=await supabaseApi.from("team_players").update({player_name:name.trim(),goals:Number(goals)}).eq("id",id);if(error)return alert("Player update failed: "+error.message);await save();}
 async function deletePlayer(id){if(!isAdmin||!confirm("Delete this player record?"))return;const {error}=await supabaseApi.from("team_players").delete().eq("id",id);if(error)return alert("Player delete failed: "+error.message);await save();}
-async function editTeam(id){if(!isAdmin)return alert("Admin login required.");const t=team(id);if(!t)return;const name=prompt("Team name:",t.name);if(name===null)return;if(!name.trim())return alert("Team name cannot be empty.");const group=prompt("Group (A-H):",t.group);if(group===null)return;const manager=prompt("Manager name:",t.manager||"");if(manager===null)return;const short=prompt("Short name:",t.short||"");if(short===null)return;const {error}=await supabaseApi.from("teams").update({name:name.trim(),group_code:group.trim().toUpperCase(),manager_name:manager.trim()||null,short_name:short.trim()||null}).eq("id",id);if(error)return alert("Team update failed: "+error.message);await save();}
+async function editTeam(id){
+ if(!isAdmin)return alert("Admin login required.");
+ const t=team(id);if(!t)return;
+ editingTeamId=id;
+ document.getElementById("teamName").value=t.name||"";
+ document.getElementById("teamGroup").value=t.group||"A";
+ document.getElementById("managerName").value=t.manager||"";
+ document.getElementById("teamShort").value=t.short||"";
+ const wrap=document.getElementById("newTeamPlayers");
+ wrap.innerHTML="";
+ const members=db.players.filter(p=>p.team===id).sort((a,b)=>a.name.localeCompare(b.name));
+ if(members.length)members.forEach(p=>addNewTeamPlayerRow(p.name,p.goals,p.id));
+ else addNewTeamPlayerRow();
+ setTeamFormMode(true);
+ document.getElementById("teamFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
+}
 async function deleteTeam(id){if(!isAdmin)return alert("Admin login required.");const t=team(id);if(!t||!confirm(`Delete team "${t.name}"? This may fail if fixtures are linked to this team.`))return;const {error}=await supabaseApi.from("teams").delete().eq("id",id);if(error)return alert("Team delete failed: "+error.message);await save();}
 async function editMatch(id){if(!isAdmin)return alert("Admin login required.");const m=db.matches.find(x=>x.id===id);if(!m)return;const round=prompt("Round / match label:",m.round||"");if(round===null)return;const date=prompt("Date & time (YYYY-MM-DDTHH:MM):",m.date?isoToDhakaDateTimeInput(m.date):"");if(date===null)return;const venue=prompt("Venue:",m.venue||"");if(venue===null)return;const hs=prompt("Home score:",m.hs);if(hs===null)return;const as=prompt("Away score:",m.as);if(as===null)return;const status=prompt("Status: upcoming, live, completed",m.status||"upcoming");if(status===null)return;if(!["upcoming","live","completed"].includes(status.trim().toLowerCase()))return alert("Status must be upcoming, live, or completed.");const {error}=await supabaseApi.from("matches").update({round_label:round.trim(),match_date:dhakaDateTimeToISO(date),venue:venue.trim()||null,home_score:Math.max(0,Number(hs)||0),away_score:Math.max(0,Number(as)||0),status:status.trim().toLowerCase()}).eq("id",id);if(error)return alert("Fixture update failed: "+error.message);await save();}
 async function deleteMatch(id){if(!isAdmin||!confirm("Delete this fixture permanently?"))return;const {error}=await supabaseApi.from("matches").delete().eq("id",id);if(error)return alert("Fixture delete failed: "+error.message);await save();}
