@@ -43,7 +43,7 @@ footer{text-align:center;color:#8a96a6;font-size:11px;padding:24px}
 <section id="adminPanel" class="panel">
  <div class="section-head"><h3>Admin Workspace</h3><button class="secondary" onclick="toggleAdmin()">Close</button></div>
  <div class="notice"><b>Connected mode:</b> Public visitors can view tournament data. Only the authenticated admin account registered in app_admins can make changes.</div>
- <div id="adminLoginBox"><h3>Admin Login</h3><div class="formgrid"><div class="field"><label>Admin email</label><input id="adminEmail" type="email" placeholder="Your Supabase Auth email"></div><div class="field"><label>Password</label><input id="adminPassword" type="password" placeholder="Your password"></div></div><button id="loginButton" class="primary" type="button" onclick="window.adminLogin()">Login</button><p id="loginStatus" role="status" style="font-size:13px;margin-top:10px;color:#52647c"></p></div><div id="adminTools" class="hidden"><div class="actions"><button class="secondary" onclick="adminLogout()">Logout</button></div><h3>Add Team</h3><div class="formgrid">
+ <div id="adminLoginBox"><h3>Admin Login</h3><div class="formgrid"><div class="field"><label>Admin email</label><input id="adminEmail" type="email" placeholder="Your Supabase Auth email"></div><div class="field"><label>Password</label><input id="adminPassword" type="password" placeholder="Your password"></div></div><button id="loginButton" class="primary" type="button">Login</button><p id="loginStatus" role="status" style="font-size:13px;margin-top:10px;color:#52647c"></p></div><div id="adminTools" class="hidden"><div class="actions"><button class="secondary" onclick="adminLogout()">Logout</button></div><h3>Add Team</h3><div class="formgrid">
   <div class="field"><label>Team name</label><input id="teamName" placeholder="e.g. Balashi United"></div>
   <div class="field"><label>Group</label><select id="teamGroup"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
   <div class="field"><label>Manager name (optional)</label><input id="managerName" placeholder="Team manager"></div>
@@ -102,6 +102,18 @@ footer{text-align:center;color:#8a96a6;font-size:11px;padding:24px}
         activateTab(button.getAttribute("data-tab"), button);
       });
     });
+    var loginButton = document.getElementById("loginButton");
+    if (loginButton) {
+      loginButton.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (typeof window.adminLogin === "function") {
+          window.adminLogin();
+        } else {
+          var status = document.getElementById("loginStatus");
+          if (status) status.textContent = "Login script did not load. Please refresh or check the deployed file.";
+        }
+      });
+    }
     var panel = document.getElementById("adminPanel");
     function syncAdmin() {
       if (!panel) return;
