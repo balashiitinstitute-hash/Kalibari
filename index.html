@@ -280,9 +280,12 @@ hr{border-top-color:#34384f!important}
 }
 
 /* Match lineup (live players) */
-.match-team-click{cursor:pointer;border-radius:8px;padding:2px 4px;transition:background .15s}
-.match-team-click:hover{background:#ffffff12}
-.match-team-click .team-lineup-hint{display:block;font-size:10px;color:#6effb8;font-weight:700;margin-top:2px;letter-spacing:.3px}
+.match-team-click{cursor:pointer;border-radius:8px;padding:5px 6px;transition:background .15s,border-color .15s;border:1px dashed transparent;outline:none}
+.match-team-click:hover{background:#ffffff12;border-color:#6effb875}
+.match-team-click:focus-visible{border-color:#6effb8;outline:2px solid #6effb855;outline-offset:2px}
+.match-team-click .team-lineup-hint{display:inline-block;font-size:9px;color:#6effb8;font-weight:750;margin-top:5px;letter-spacing:.2px;padding:3px 6px;border:1px solid #6effb855;border-radius:5px;background:#6effb812;line-height:1.25}
+.match-team-click .team-lineup-hint:before{content:"☷ ";font-size:10px}
+.away-team.match-team-click .team-lineup-hint{margin-left:auto}
 .match-lineup-panel{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #3dd68c35}
 .match-lineup-panel.open{display:block}
 .match-lineup-side{margin-bottom:10px}
