@@ -237,6 +237,48 @@ hr{border-top-color:#34384f!important}
 }
 
 
+/* Live & Completed match card styles */
+.card.match-live{
+  border:1px solid #3dd68c55 !important;
+  box-shadow:0 0 0 1px #3dd68c30, 0 8px 28px #1a3d2a40, 0 0 24px #3dd68c22 !important;
+  background:linear-gradient(145deg,#1a2e28f5,#14241ff5) !important;
+  position:relative;
+}
+.card.match-live::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%,#3dd68c18,transparent 55%);
+}
+.card.match-live .score{color:#6effb8;text-shadow:0 0 12px #3dd68c55}
+.card.match-live .pill,
+.pill.pill-live{
+  background:linear-gradient(120deg,#1a9b5c,#2fd67a) !important;
+  color:#04150c !important;
+  border:1px solid #6effb8 !important;
+  box-shadow:0 0 12px #3dd68c40;
+  animation:livePulse 1.8s ease-in-out infinite;
+}
+@keyframes livePulse{
+  0%,100%{box-shadow:0 0 8px #3dd68c40}
+  50%{box-shadow:0 0 16px #3dd68c70,0 0 4px #6effb8}
+}
+
+.card.match-completed{
+  opacity:0.72;
+  filter:grayscale(0.35) brightness(0.92);
+  border-color:#ffffff0c !important;
+  box-shadow:0 4px 14px #0a0c1410 !important;
+  background:linear-gradient(145deg,#1a1d28f0,#14171ff0) !important;
+}
+.card.match-completed:hover{opacity:0.85;filter:grayscale(0.2)}
+.card.match-completed .score{color:#9aa0b5}
+.card.match-completed .pill,
+.pill.pill-completed{
+  background:#2a2e3d !important;
+  color:#8b91a8 !important;
+  border:1px solid #3d4258 !important;
+  box-shadow:none !important;
+}
+
 /* MATCH MOMENTS GALLERY */
 .moments-section{margin-top:30px;padding:20px 0;overflow:hidden}
 .moments-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
@@ -710,7 +752,7 @@ async function deleteMatch(id){if(!isAdmin||!confirm("Delete this fixture perman
 async function editNotice(id){if(!isAdmin)return alert("Admin login required.");const n=db.notices.find(x=>x.id===id);if(!n)return;const message=prompt("Edit announcement:",n.text);if(message===null)return;if(!message.trim())return alert("Announcement cannot be empty.");const {error}=await supabaseApi.from("notices").update({message:message.trim()}).eq("id",id);if(error)return alert("Announcement update failed: "+error.message);await save();}
 async function deleteNotice(id){if(!isAdmin||!confirm("Delete this announcement permanently?"))return;const {error}=await supabaseApi.from("notices").delete().eq("id",id);if(error)return alert("Announcement delete failed: "+error.message);await save();}
 async function resetDemo(){alert("For safety, bulk reset is disabled in this connected version. Delete records from Supabase Table Editor if required.");}
-function cardMatch(m){let h=team(m.home),a=team(m.away);return `<div class="card" style="margin-bottom:10px"><div class="match"><div><b>${esc(h?.name||"TBD")}</b><br><small>${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round)}</small></div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill">${esc(m.status.toUpperCase())}</span></div><div style="text-align:right"><b>${esc(a?.name||"TBD")}</b><br><small>${esc(m.venue||"Venue TBA")}</small></div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div></div>`}
+function cardMatch(m){let h=team(m.home),a=team(m.away);const statusClass=m.status==="live"?"match-live":(m.status==="completed"?"match-completed":"");const pillClass=m.status==="live"?"pill-live":(m.status==="completed"?"pill-completed":"");return `<div class="card ${statusClass}" style="margin-bottom:10px"><div class="match"><div><b>${esc(h?.name||"TBD")}</b><br><small>${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round)}</small></div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${esc(m.status.toUpperCase())}</span></div><div style="text-align:right"><b>${esc(a?.name||"TBD")}</b><br><small>${esc(m.venue||"Venue TBA")}</small></div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div></div>`}
 function toggleTeamPlayers(id){const panel=document.getElementById("team-players-"+id);if(!panel)return;const wasOpen=panel.classList.contains("open");document.querySelectorAll("#teamList .team-player-details.open").forEach(el=>el.classList.remove("open"));if(!wasOpen)panel.classList.add("open");}
 function standings(group){let rows=db.teams.filter(t=>t.group===group).map(t=>({id:t.id,name:t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));db.matches.filter(m=>m.group===group&&m.status==="completed").forEach(m=>{let h=rows.find(x=>x.id===m.home),a=rows.find(x=>x.id===m.away);if(!h||!a)return;h.p++;a.p++;h.gf+=m.hs;h.ga+=m.as;a.gf+=m.as;a.ga+=m.hs;if(m.hs>m.as){h.w++;a.l++;h.pts+=3}else if(m.hs<m.as){a.w++;h.l++;a.pts+=3}else{h.d++;a.d++;h.pts++;a.pts++}});return rows.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf)}
 function render(){document.getElementById("teamCount").textContent=db.teams.length;document.getElementById("groupCount").textContent=new Set(db.teams.map(t=>t.group)).size;document.getElementById("matchCount").textContent=db.matches.length;document.getElementById("completedCount").textContent=db.matches.filter(m=>m.status==="completed").length;
