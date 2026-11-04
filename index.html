@@ -301,7 +301,7 @@ hr{border-top-color:#34384f!important}
 .match-scorer-item:not(:last-child)::after{content:" · "}
 .card.match-completed .match-scorers-line{color:#a7aec5}
 .card.match-completed .match-scorers-line strong{color:#c5cad8}
-.match-clock{margin-top:6px;font-size:11px;font-weight:800;color:#a7aec5;letter-spacing:.3px}
+.match-clock{margin-top:10px;font-size:13px;font-weight:800;color:#a7aec5;letter-spacing:.3px}
 .match-clock.live-clock{color:#6effb8;text-shadow:0 0 10px #3dd68c40}
 
 /* MATCH MOMENTS GALLERY */
@@ -578,7 +578,7 @@ async function loadData(){
     else errors[key] = r.reason?.message || String(r.reason);
   });
   db.teams = (db.teams||[]).map(x=>({id:x.id,name:x.name,group:x.group_code,manager:x.manager_name||"",short:x.short_name||""}));
-  db.matches = (db.matches||[]).map(x=>({id:x.id,group:x.group_code,round:x.round_label,home:x.home_team_id,away:x.away_team_id,date:x.match_date,venue:x.venue||"",hs:x.home_score||0,as:x.away_score||0,status:x.status,duration:Number(x.duration_minutes)||40,minute:Number(x.current_minute)||0}));
+  db.matches = (db.matches||[]).map(x=>({id:x.id,group:x.group_code,round:x.round_label,home:x.home_team_id,away:x.away_team_id,date:x.match_date,venue:x.venue||"",hs:x.home_score||0,as:x.away_score||0,status:x.status,duration:Number(x.duration_minutes)||40,minute:Number(x.current_minute)||0,startedAt:x.live_started_at||null}));
   db.notices = (db.notices||[]).map(x=>({id:x.id,text:x.message,date:x.created_at}));
   db.players = (db.players||[]).map(x=>({id:x.id,team:x.team_id,name:x.player_name,goals:Number(x.goals)||0}));
   db.matchPlayers = (db.matchPlayers||[]).map(x=>({id:x.id,match:x.match_id,team:x.team_id,player:x.player_id}));
@@ -784,7 +784,7 @@ function onScoreMatchChange(){
   const cm=document.getElementById("matchCurrentMinute"); if(cm) cm.value=m.minute||0;
   const du=document.getElementById("matchDurationUpdate"); if(du) du.value=m.duration||40;
 }
-async function updateScore(){if(!isAdmin)return alert("Admin login required.");let id=document.getElementById("scoreMatch").value;if(!id)return alert("Create a fixture first");const duration=Math.max(1,Number(document.getElementById("matchDurationUpdate")?.value)||40);const minute=Math.max(0,Number(document.getElementById("matchCurrentMinute")?.value)||0);const {error}=await supabaseApi.from("matches").update({home_score:Math.max(0,+document.getElementById("homeScore").value||0),away_score:Math.max(0,+document.getElementById("awayScore").value||0),status:document.getElementById("matchStatus").value,duration_minutes:duration,current_minute:minute}).eq("id",id);if(error)return alert(error.message);await save();}
+async function updateScore(){if(!isAdmin)return alert("Admin login required.");let id=document.getElementById("scoreMatch").value;if(!id)return alert("Create a fixture first");const duration=Math.max(1,Number(document.getElementById("matchDurationUpdate")?.value)||40);const minute=Math.max(0,Number(document.getElementById("matchCurrentMinute")?.value)||0);const status=document.getElementById("matchStatus").value;const liveStartedAt=status==="live"?new Date(Date.now()-minute*60000).toISOString():null;const {error}=await supabaseApi.from("matches").update({home_score:Math.max(0,+document.getElementById("homeScore").value||0),away_score:Math.max(0,+document.getElementById("awayScore").value||0),status,duration_minutes:duration,current_minute:minute,live_started_at:liveStartedAt}).eq("id",id);if(error)return alert(error.message);await save();}
 function onLineupMatchChange(){
   const matchId=document.getElementById("lineupMatch")?.value;
   const teamSel=document.getElementById("lineupTeam");
@@ -975,7 +975,7 @@ async function editTeam(id){
  document.getElementById("teamFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
 }
 async function deleteTeam(id){if(!isAdmin)return alert("Admin login required.");const t=team(id);if(!t||!confirm(`Delete team "${t.name}"? This may fail if fixtures are linked to this team.`))return;const {error}=await supabaseApi.from("teams").delete().eq("id",id);if(error)return alert("Team delete failed: "+error.message);await save();}
-async function editMatch(id){if(!isAdmin)return alert("Admin login required.");const m=db.matches.find(x=>x.id===id);if(!m)return;const round=prompt("Round / match label:",m.round||"");if(round===null)return;const date=prompt("Date & time (YYYY-MM-DDTHH:MM):",m.date?isoToDhakaDateTimeInput(m.date):"");if(date===null)return;const duration=prompt("Total match minutes:",m.duration||40);if(duration===null)return;const minute=prompt("Running minute (0 if not started):",m.minute||0);if(minute===null)return;const hs=prompt("Home score:",m.hs);if(hs===null)return;const as=prompt("Away score:",m.as);if(as===null)return;const status=prompt("Status: upcoming, live, completed",m.status||"upcoming");if(status===null)return;if(!["upcoming","live","completed"].includes(status.trim().toLowerCase()))return alert("Status must be upcoming, live, or completed.");const {error}=await supabaseApi.from("matches").update({round_label:round.trim(),match_date:dhakaDateTimeToISO(date),venue:FIXED_VENUE,home_score:Math.max(0,Number(hs)||0),away_score:Math.max(0,Number(as)||0),status:status.trim().toLowerCase(),duration_minutes:Math.max(1,Number(duration)||40),current_minute:Math.max(0,Number(minute)||0)}).eq("id",id);if(error)return alert("Fixture update failed: "+error.message);await save();}
+async function editMatch(id){if(!isAdmin)return alert("Admin login required.");const m=db.matches.find(x=>x.id===id);if(!m)return;const round=prompt("Round / match label:",m.round||"");if(round===null)return;const date=prompt("Date & time (YYYY-MM-DDTHH:MM):",m.date?isoToDhakaDateTimeInput(m.date):"");if(date===null)return;const duration=prompt("Total match minutes:",m.duration||40);if(duration===null)return;const minute=prompt("Running minute (0 if not started):",m.minute||0);if(minute===null)return;const hs=prompt("Home score:",m.hs);if(hs===null)return;const as=prompt("Away score:",m.as);if(as===null)return;const status=prompt("Status: upcoming, live, completed",m.status||"upcoming");if(status===null)return;if(!["upcoming","live","completed"].includes(status.trim().toLowerCase()))return alert("Status must be upcoming, live, or completed.");const cleanStatus=status.trim().toLowerCase();const cleanMinute=Math.max(0,Number(minute)||0);const liveStartedAt=cleanStatus==="live"?new Date(Date.now()-cleanMinute*60000).toISOString():null;const {error}=await supabaseApi.from("matches").update({round_label:round.trim(),match_date:dhakaDateTimeToISO(date),venue:FIXED_VENUE,home_score:Math.max(0,Number(hs)||0),away_score:Math.max(0,Number(as)||0),status:cleanStatus,duration_minutes:Math.max(1,Number(duration)||40),current_minute:cleanMinute,live_started_at:liveStartedAt}).eq("id",id);if(error)return alert("Fixture update failed: "+error.message);await save();}
 async function deleteMatch(id){if(!isAdmin||!confirm("Delete this fixture permanently?"))return;const {error}=await supabaseApi.from("matches").delete().eq("id",id);if(error)return alert("Fixture delete failed: "+error.message);await save();}
 async function editNotice(id){if(!isAdmin)return alert("Admin login required.");const n=db.notices.find(x=>x.id===id);if(!n)return;const message=prompt("Edit announcement:",n.text);if(message===null)return;if(!message.trim())return alert("Announcement cannot be empty.");const {error}=await supabaseApi.from("notices").update({message:message.trim()}).eq("id",id);if(error)return alert("Announcement update failed: "+error.message);await save();}
 async function deleteNotice(id){if(!isAdmin||!confirm("Delete this announcement permanently?"))return;const {error}=await supabaseApi.from("notices").delete().eq("id",id);if(error)return alert("Announcement delete failed: "+error.message);await save();}
@@ -1017,15 +1017,21 @@ function matchClockHtml(m){
   const total=Math.max(1,Number(m.duration)||40);
   if(m.status==="live"){
     let running=Number(m.minute)||0;
-    if(!running&&m.date){
-      const start=new Date(m.date).getTime();
-      if(!isNaN(start)) running=Math.max(0,Math.floor((Date.now()-start)/60000));
-    }
+    if(m.startedAt){const started=new Date(m.startedAt).getTime();if(!isNaN(started))running=Math.max(0,Math.floor((Date.now()-started)/60000));}
     running=Math.min(running,total+15);
-    return `<div class="match-clock live-clock">⏱ ${running}' / ${total}'</div>`;
+    return `<div class="match-clock live-clock" data-started-at="${esc(m.startedAt||"")}" data-minute="${Number(m.minute)||0}" data-duration="${total}">⏱ ${running}' / ${total}'</div>`;
   }
   if(m.status==="completed") return `<div class="match-clock">Full time · ${total}'</div>`;
   return `<div class="match-clock">⏱ ${total}' match</div>`;
+}
+function refreshLiveClocks(){
+  document.querySelectorAll(".match-clock.live-clock").forEach(el=>{
+    const started=el.dataset.startedAt?new Date(el.dataset.startedAt).getTime():NaN;
+    let minute=Number(el.dataset.minute)||0;
+    if(!isNaN(started))minute=Math.max(0,Math.floor((Date.now()-started)/60000));
+    const total=Math.max(1,Number(el.dataset.duration)||40);
+    el.textContent=`⏱ ${Math.min(minute,total+15)}' / ${total}'`;
+  });
 }
 function cardMatch(m){
   let h=team(m.home),a=team(m.away);
@@ -1416,6 +1422,21 @@ async function deleteMatchMoment(encodedName) {
   alert("Photo deleted successfully.");
 }
 
-if (supabaseApi) { loadData().catch(e=>console.error("Supabase data load error:",e)); } else { console.error(supabaseInitError); }
+if (supabaseApi) {
+  loadData().catch(e=>console.error("Supabase data load error:",e));
+  supabaseApi.channel("public-tournament-live")
+    .on("postgres_changes",{event:"*",schema:"public",table:"matches"},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"teams"},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"notices"},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"team_players"},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"match_players"},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"match_scorers"},()=>loadData().catch(console.error))
+    .subscribe();
+  let lastRefresh=0;
+  setInterval(()=>{
+    refreshLiveClocks();
+    if(!isAdmin && Date.now()-lastRefresh>=10000){lastRefresh=Date.now();loadData().catch(e=>console.warn("Background refresh failed:",e));}
+  },1000);
+} else { console.error(supabaseInitError); }
 </script>
 </body></html>
