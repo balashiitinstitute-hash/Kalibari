@@ -361,6 +361,28 @@ hr{border-top-color:#34384f!important}
 .moment-lightbox-close{position:absolute;right:14px;top:13px;width:40px!important;font-size:25px!important;background:#8f2930!important}
 @media(max-width:650px){.ticker-header{height:48px!important;min-height:48px}.ticker-track span{font-size:12px}.moment-lightbox{padding:66px 8px 12px}.moment-lightbox-toolbar{top:10px;left:10px;transform:none;gap:5px;padding:6px}.moment-lightbox-toolbar button{min-width:34px;height:34px}.moment-lightbox-close{right:10px;top:10px}}
 
+
+/* Match status filters and mobile-friendly match cards */
+.match-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 13px}
+.match-filter button{border:1px solid #dce5ee;background:#fff;color:#38516a;border-radius:999px;padding:9px 13px;font-weight:800;font-size:12px;cursor:pointer}
+.match-filter button.active{background:#143452;color:#fff;border-color:#143452}
+.match-main-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
+.match-team{min-width:0;overflow-wrap:anywhere}.match-team b{display:block;font-size:15px;line-height:1.35}
+.home-team{text-align:left}.away-team{text-align:right}.match-center{min-width:86px;text-align:center}
+.match-center .score{font-size:22px;white-space:nowrap}
+.match-meta-row{display:flex;align-items:center;justify-content:center;gap:8px 18px;flex-wrap:wrap;margin-top:14px;padding-top:11px;border-top:1px solid #e8eef4;color:#61748a;font-size:12px}
+.match-meta-item{display:inline-flex;align-items:center;gap:4px}
+.live-match-card{padding:17px}.live-match-card .match-meta-row{font-weight:650}
+@media(max-width:600px){
+ .match-main-row{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px}
+ .match-team b{font-size:12px;line-height:1.3}.match-center{min-width:70px}
+ .match-center .score{font-size:18px}.match-center .pill{font-size:9px;padding:4px 6px}
+ .match-clock{font-size:12px!important}
+ .match-meta-row{justify-content:flex-start;gap:7px 12px;margin-top:12px;padding-top:10px;font-size:11px}
+ .live-match-card{padding:13px}.match-scorers-line{font-size:10px}
+ .match-filter{gap:6px}.match-filter button{padding:8px 10px;font-size:11px}
+}
+
 </style>
 </head>
 <body>
@@ -377,15 +399,15 @@ hr{border-top-color:#34384f!important}
 <div class="stats">
  <div class="stat"><span>Total Teams</span><b id="teamCount">0</b></div><div class="stat"><span>Groups</span><b id="groupCount">0</b></div><div class="stat"><span>Matches</span><b id="matchCount">0</b></div><div class="stat"><span>Completed</span><b id="completedCount">0</b></div>
 </div>
-<nav id="nav"><button class="active" data-tab="overview">Overview</button><button data-tab="teams">Teams</button><button data-tab="fixtures">Fixtures</button><button data-tab="standings">Standings</button><button data-tab="results">Results</button><button data-tab="players">Top Scorers</button><button data-tab="updates">Updates</button></nav>
+<nav id="nav"><button class="active" data-tab="overview">Overview</button><button data-tab="teams">Teams</button><button data-tab="fixtures">Fixtures</button><button data-tab="standings">Standings</button><button data-tab="players">Top Scorers</button><button data-tab="updates">Updates</button></nav>
 <div id="overview" class="tab">
  <div class="section-head"><h3>Latest Updates</h3><span class="hint">Tournament noticeboard</span></div><div id="homeNotices"></div>
- <div class="section-head"><h3>Upcoming Matches</h3><span class="hint">Next on schedule</span></div><div id="homeMatches"></div>
+ <div class="section-head"><h3>Matches</h3><span class="hint">Live · Upcoming · Completed</span></div><div class="match-filter" id="matchFilter"><button class="active" data-match-filter="live">Live Match</button><button data-match-filter="upcoming">Upcoming Match</button><button data-match-filter="completed">Completed Match</button></div><div id="homeMatches"></div>
 </div>
 <div id="teams" class="tab hidden"><div class="section-head"><h3>Participating Teams</h3><span class="hint">All registered teams</span></div><div id="teamList" class="grid"></div></div>
 <div id="fixtures" class="tab hidden"><div class="section-head"><h3>Match Fixtures</h3><span class="hint">Group stage schedule</span></div><div id="fixtureList"></div></div>
 <div id="standings" class="tab hidden"><div class="section-head"><h3>Group Standings</h3><span class="hint">Auto-calculated from results</span></div><div id="standingList"></div></div>
-<div id="results" class="tab hidden"><div class="section-head"><h3>Match Results</h3><span class="hint">Completed matches</span></div><div id="resultList"></div></div><div id="players" class="tab hidden"><div class="section-head"><h3>Golden Boot · Top Scorers</h3><span class="hint">Player goals across the tournament</span></div><div id="topScorers"></div></div>
+<div id="players" class="tab hidden"><div class="section-head"><h3>Golden Boot · Top Scorers</h3><span class="hint">Player goals across the tournament</span></div><div id="topScorers"></div></div>
 <div id="updates" class="tab hidden"><div class="section-head"><h3>Tournament Updates</h3></div><div id="noticeList"></div></div>
 <!-- MATCH MOMENTS PUBLIC GALLERY -->
 <section class="moments-section" id="matchMoments">
@@ -506,6 +528,15 @@ hr{border-top-color:#34384f!important}
     if (button) button.classList.add("active");
   }
   document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("#matchFilter button").forEach(function (button) {
+      button.addEventListener("click", function () {
+        document.querySelectorAll("#matchFilter button").forEach(function (b) { b.classList.toggle("active", b === button); });
+        var status = button.getAttribute("data-match-filter");
+        var matches = db.matches.slice().sort(function(a,b){return (a.date||"").localeCompare(b.date||"");});
+        var list = matches.filter(function(m){return m.status === status;});
+        document.getElementById("homeMatches").innerHTML = list.map(cardMatch).join("") || '<div class="empty">No ' + status + ' matches yet.</div>';
+      });
+    });
     document.querySelectorAll("#nav button").forEach(function (button) {
       button.addEventListener("click", function () {
         activateTab(button.getAttribute("data-tab"), button);
@@ -1047,13 +1078,13 @@ function cardMatch(m){
   const homeScorers=showScorers?scorersHtml(m.id,m.home,false):"";
   const awayScorers=showScorers?scorersHtml(m.id,m.away,true):"";
   const lineupPanels=isLive?`<div id="match-lineup-${esc(m.id)}-${esc(m.home||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(h?.name||"Home")} — Playing XI</b>${lineupChipsHtml(m.id,m.home)}</div></div><div id="match-lineup-${esc(m.id)}-${esc(m.away||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(a?.name||"Away")} — Playing XI</b>${lineupChipsHtml(m.id,m.away)}</div></div>`:"";
-  return `<div class="card ${statusClass}" style="margin-bottom:10px"><div class="match"><div ${homeClick}><b>${esc(h?.name||"TBD")}</b>${homeHint}<br><small>${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round)}</small>${homeScorers}</div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${esc(m.status.toUpperCase())}</span>${matchClockHtml(m)}</div><div style="text-align:right" ${awayClick}><b>${esc(a?.name||"TBD")}</b>${awayHint}<br><small>${esc(m.venue||"Venue TBA")}</small>${awayScorers}</div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div>${lineupPanels}</div>`;
+  return `<div class="card ${statusClass} ${isLive?"live-match-card":""}" style="margin-bottom:10px"><div class="match match-main-row"><div class="match-team home-team" ${homeClick}><b>${esc(h?.name||"TBD")}</b>${homeHint}${homeScorers}</div><div class="match-center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${esc(m.status.toUpperCase())}</span>${matchClockHtml(m)}</div><div class="match-team away-team" ${awayClick}><b>${esc(a?.name||"TBD")}</b>${awayHint}${awayScorers}</div></div><div class="match-meta-row"><span class="match-meta-item">🏆 ${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round||"Match")}</span><span class="match-meta-item">📍 ${esc(m.venue||"Venue TBA")}</span><span class="match-meta-item">🕒 ${esc(dateText(m.date))}</span></div>${lineupPanels}</div>`;
 }
 function toggleTeamPlayers(id){const panel=document.getElementById("team-players-"+id);if(!panel)return;const wasOpen=panel.classList.contains("open");document.querySelectorAll("#teamList .team-player-details.open").forEach(el=>el.classList.remove("open"));if(!wasOpen)panel.classList.add("open");}
 function standings(group){let rows=db.teams.filter(t=>t.group===group).map(t=>({id:t.id,name:t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));db.matches.filter(m=>m.group===group&&m.status==="completed").forEach(m=>{let h=rows.find(x=>x.id===m.home),a=rows.find(x=>x.id===m.away);if(!h||!a)return;h.p++;a.p++;h.gf+=m.hs;h.ga+=m.as;a.gf+=m.as;a.ga+=m.hs;if(m.hs>m.as){h.w++;a.l++;h.pts+=3}else if(m.hs<m.as){a.w++;h.l++;a.pts+=3}else{h.d++;a.d++;h.pts++;a.pts++}});return rows.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf)}
 function render(){document.getElementById("teamCount").textContent=db.teams.length;document.getElementById("groupCount").textContent=new Set(db.teams.map(t=>t.group)).size;document.getElementById("matchCount").textContent=db.matches.length;document.getElementById("completedCount").textContent=db.matches.filter(m=>m.status==="completed").length;
 let teams=db.teams.map(t=>{const members=db.players.filter(p=>p.team===t.id).sort((a,b)=>a.name.localeCompare(b.name));return `<div class="card team-card" onclick="toggleTeamPlayers('${t.id}')"><div class="team"><div class="badge">⚽</div><div style="flex:1"><b class="team-name">${esc(t.name)}</b><small>Group ${esc(t.group)}${t.manager?" · "+esc(t.manager):""}</small></div><span class="pill">${members.length} PLAYER${members.length===1?"":"S"}</span></div><div id="team-players-${esc(t.id)}" class="team-player-details">${members.length?members.map(p=>`<div class="team-player-line"><span>${esc(p.name)}</span><b>${p.goals} goal${p.goals===1?"":"s"}</b></div>`).join(""):'<p class="hint">No players added for this team yet.</p>'}</div></div>`}).join("")||'<div class="empty">No teams added yet. Admin can add participating teams.</div>';document.getElementById("teamList").innerHTML=teams;
-let matches=db.matches.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));document.getElementById("fixtureList").innerHTML=matches.map(cardMatch).join("")||'<div class="empty">Fixtures will appear here when published.</div>';document.getElementById("homeMatches").innerHTML=matches.filter(m=>m.status!=="completed").slice(0,3).map(cardMatch).join("")||'<div class="empty">No upcoming matches announced.</div>';document.getElementById("resultList").innerHTML=matches.filter(m=>m.status==="completed").map(cardMatch).join("")||'<div class="empty">No completed match results yet.</div>';
+let matches=db.matches.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));document.getElementById("fixtureList").innerHTML=matches.map(cardMatch).join("")||'<div class="empty">Fixtures will appear here when published.</div>';const activeMatchFilter=document.querySelector("#matchFilter button.active")?.dataset.matchFilter||"live";const filteredHomeMatches=matches.filter(m=>m.status===activeMatchFilter);document.getElementById("homeMatches").innerHTML=filteredHomeMatches.map(cardMatch).join("")||`<div class="empty">No ${activeMatchFilter} matches ${activeMatchFilter==="live"?"right now":activeMatchFilter==="upcoming"?"scheduled":"yet"}.</div>`;
 let groups=[...new Set(db.teams.map(t=>t.group))].sort();document.getElementById("standingList").innerHTML=groups.map(g=>`<div class="card" style="margin-bottom:13px"><h3>Group ${g}</h3><table class="table"><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${standings(g).map(r=>`<tr><td>${esc(r.name)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div>`).join("")||'<div class="empty">Standings will be calculated after teams and results are added.</div>';
 let ns=db.notices.map(n=>`<div class="card" style="margin-bottom:9px"><b>📢 Tournament Notice</b><p style="margin:7px 0">${esc(n.text)}</p><small class="hint">${dateText(n.date)}</small></div>`).join("")||'<div class="empty">No announcements yet.</div>';document.getElementById("noticeList").innerHTML=ns;document.getElementById("homeNotices").innerHTML=db.notices.slice(0,2).map(n=>`<div class="notice">${esc(n.text)}<div class="hint" style="margin-top:5px">${dateText(n.date)}</div></div>`).join("")||'<div class="hint">No announcements published.</div>';
 updateFixtureTeamOptions();document.getElementById("scoreMatch").innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("")
@@ -1076,7 +1107,7 @@ if(scorerMatchEl){
   }
 }
 const playerOpts=db.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");const playerTeam=document.getElementById("playerTeam");if(playerTeam)playerTeam.innerHTML='<option value="">Select team</option>'+playerOpts;
-const scorers=db.players.filter(p=>Number(p.goals)>0).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));document.getElementById("topScorers").innerHTML=scorers.length?`<div class="card"><table class="table"><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Goals</th></tr></thead><tbody>${scorers.map((p,i)=>`<tr><td>${i+1}</td><td><b>${esc(p.name)}</b></td><td>${esc(team(p.team)?.name||"Unknown team")}</td><td><b>${p.goals}</b></td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Player goal records will appear here.</div>';
+const scorerTotals=new Map();(db.matchScorers||[]).forEach(s=>{const pid=s.player;const goals=Math.max(0,Number(s.goals)||0);if(pid&&goals)scorerTotals.set(pid,(scorerTotals.get(pid)||0)+goals);});const scorers=db.players.map(p=>({...p,goals:scorerTotals.has(p.id)?scorerTotals.get(p.id):(Number(p.goals)||0)})).filter(p=>p.goals>0).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));document.getElementById("topScorers").innerHTML=scorers.length?`<div class="card"><table class="table"><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Goals</th></tr></thead><tbody>${scorers.map((p,i)=>`<tr><td>${i+1}</td><td><b>${esc(p.name)}</b></td><td>${esc(team(p.team)?.name||"Unknown team")}</td><td><b>${p.goals}</b></td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Player goal records will appear here.</div>';
 // Admin management lists are rendered only after a verified admin login.
 if(isAdmin){
  const mt=document.getElementById("manageTeams"), mm=document.getElementById("manageMatches"), mn=document.getElementById("manageNotices"), mp=document.getElementById("managePlayers");
