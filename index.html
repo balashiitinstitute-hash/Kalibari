@@ -280,11 +280,11 @@ hr{border-top-color:#34384f!important}
 }
 
 /* Match lineup (live players) */
-.match-team-click{cursor:pointer;border-radius:8px;padding:5px 6px;transition:background .15s,border-color .15s;border:1px dashed transparent;outline:none}
-.match-team-click:hover{background:#ffffff12;border-color:#6effb875}
+.match-team-click{cursor:pointer!important;border-radius:9px;padding:5px 6px;transition:background .15s,border-color .15s;border:1px dashed #6effb875;outline:none}
+.match-team-click:hover{background:#ffffff12!important;border-color:#6effb8!important}
 .match-team-click:focus-visible{border-color:#6effb8;outline:2px solid #6effb855;outline-offset:2px}
-.match-team-click .team-lineup-hint{display:inline-block;font-size:9px;color:#6effb8;font-weight:750;margin-top:5px;letter-spacing:.2px;padding:3px 6px;border:1px solid #6effb855;border-radius:5px;background:#6effb812;line-height:1.25}
-.match-team-click .team-lineup-hint:before{content:"☷ ";font-size:10px}
+.match-team-click .team-lineup-hint{display:inline-flex!important;align-items:center;justify-content:center;font-size:9px!important;color:#082c20!important;font-weight:800!important;margin-top:6px;padding:4px 7px!important;letter-spacing:.15px;border:1px solid #6effb8!important;border-radius:5px;background:#6effb8!important;line-height:1.2;white-space:nowrap;box-shadow:0 1px 5px #0003}
+.match-team-click .team-lineup-hint:before{content:"☷";font-size:10px;margin-right:4px}
 .away-team.match-team-click .team-lineup-hint{margin-left:auto}
 .match-lineup-panel{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #3dd68c35}
 .match-lineup-panel.open{display:block}
@@ -387,6 +387,12 @@ hr{border-top-color:#34384f!important}
 }
 
 </style>
+
+<style id="lineup-visibility-override">
+.match-team-click{cursor:pointer!important;border:1px dashed #6effb875!important}
+.match-team-click .team-lineup-hint{display:inline-flex!important;visibility:visible!important;opacity:1!important;background:#6effb8!important;color:#082c20!important;font-size:9px!important;font-weight:800!important;padding:4px 7px!important;border-radius:5px!important;margin-top:6px!important}
+</style>
+
 </head>
 <body>
 <header class="ticker-header" aria-label="Tournament announcement">
