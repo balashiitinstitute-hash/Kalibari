@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101b2d">
-<title>Kalibari Knight Football Tournament</title>
+<title>Knight Football Tournament</title>
 <style>
 :root{--navy:#101b2d;--navy2:#182943;--panel:#20334e;--gold:#f4c451;--bg:#f3f5f8;--ink:#172338;--muted:#718096;--line:#e5eaf0;--green:#16865b}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink)}
@@ -262,6 +262,27 @@ hr{border-top-color:#34384f!important}
   50%{box-shadow:0 0 16px #3dd68c70,0 0 4px #6effb8}
 }
 
+.card.match-halftime{
+  border:1px solid #f0c14d55 !important;
+  box-shadow:0 0 0 1px #f0c14d28, 0 8px 28px #3a2e1840 !important;
+  background:linear-gradient(145deg,#2e2a1af5,#242018f5) !important;
+  position:relative;
+}
+.card.match-halftime .score{color:#f5d67a}
+.card.match-halftime .pill,
+.pill.pill-halftime{
+  background:linear-gradient(120deg,#c9a227,#e8c45a) !important;
+  color:#2a2208 !important;
+  border:1px solid #f5d67a !important;
+  box-shadow:0 0 10px #f0c14d35;
+  animation:none !important;
+}
+.match-clock.halftime-clock{
+  color:#f5d67a !important;
+  font-weight:800;
+  text-shadow:0 0 8px #f0c14d40;
+}
+
 .card.match-completed{
   opacity:0.72;
   filter:grayscale(0.35) brightness(0.92);
@@ -432,7 +453,7 @@ hr{border-top-color:#34384f!important}
   </div>
 </header>
 <main>
-<section class="hero"><div class="kicker">BALASHI IT - OFFICIAL TOURNAMENT HUB</div><h2>Kalibari Knight Football Tournament</h2><p>Fixtures · Teams · Results · Tournament Updates</p></section>
+<section class="hero"><div class="kicker">OFFICIAL TOURNAMENT HUB</div><h2>Knight Football Tournament</h2><p>Fixtures · Teams · Results · Tournament Updates</p></section>
 <div class="stats">
  <div class="stat"><span>Total Teams</span><b id="teamCount">0</b></div><div class="stat"><span>Groups</span><b id="groupCount">0</b></div><div class="stat"><span>Matches</span><b id="matchCount">0</b></div><div class="stat"><span>Completed</span><b id="completedCount">0</b></div>
 </div>
@@ -488,12 +509,19 @@ hr{border-top-color:#34384f!important}
  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
  <h3>Update Match Score</h3><div class="formgrid">
   <div class="field"><label>Match</label><select id="scoreMatch" onchange="onScoreMatchChange()"></select></div>
-  <div class="field"><label>Status</label><select id="matchStatus"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="completed">Completed</option></select></div>
+  <div class="field"><label>Status</label><select id="matchStatus"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="halftime">Half Time</option><option value="completed">Completed</option></select></div>
   <div class="field"><label>Home score</label><input id="homeScore" type="number" min="0" value="0"></div>
   <div class="field"><label>Away score</label><input id="awayScore" type="number" min="0" value="0"></div>
   <div class="field"><label>Running minute (now)</label><input id="matchCurrentMinute" type="number" min="0" value="0" placeholder="e.g. 15"></div>
   <div class="field"><label>Total match minutes</label><input id="matchDurationUpdate" type="number" min="1" value="40"></div>
- </div><button class="primary" onclick="updateScore()">Save Match Update</button>
+ </div>
+ <div class="actions" style="margin-top:12px;margin-bottom:8px">
+  <button class="primary" type="button" onclick="quickMatchAction('live')">▶ Start / Resume Match</button>
+  <button class="secondary" type="button" onclick="quickMatchAction('halftime')">⏸ Half Time</button>
+  <button class="danger" type="button" onclick="quickMatchAction('completed')">■ Complete Match</button>
+ </div>
+ <p class="hint">Half Time = ক্লক থামবে ও পাবলিক সাইটে HALF TIME দেখাবে। Resume = আবার চলবে। Complete = ম্যাচ শেষ।</p>
+ <button class="primary" onclick="updateScore()">Save Match Update</button>
  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
  <h3>Match Lineup · খেলোয়াড় নির্বাচন</h3>
  <p class="hint">প্রতিটি ম্যাচে কোন খেলোয়াড় খেলবে সেট করুন। Live ম্যাচে টিমে ক্লিক করলে পাবলিক সাইটে দেখা যাবে।</p>
@@ -537,7 +565,7 @@ hr{border-top-color:#34384f!important}
  <div class="admin-section"><div class="admin-title"><h3>Manage Announcements</h3><span class="admin-chip">ADMIN ONLY</span></div><div id="manageNotices"><p class="hint">Loading announcements...</p></div></div>
  <div class="actions"><button class="danger" onclick="resetDemo()">Reset sample data</button></div></div>
 </section>
-<footer>Powered by · Balashi IT</footer>
+<footer>Knight Football Tournament · Official information portal</footer>
 </main>
 <!-- Admin panel visibility is handled before loading Supabase, so a CDN issue cannot hide the login form. -->
 <script>
@@ -570,7 +598,10 @@ hr{border-top-color:#34384f!important}
         document.querySelectorAll("#matchFilter button").forEach(function (b) { b.classList.toggle("active", b === button); });
         var status = button.getAttribute("data-match-filter");
         var matches = db.matches.slice().sort(function(a,b){return (a.date||"").localeCompare(b.date||"");});
-        var list = matches.filter(function(m){return m.status === status;});
+        var list = matches.filter(function(m){
+          if(status === "live") return m.status === "live" || m.status === "halftime";
+          return m.status === status;
+        });
         document.getElementById("homeMatches").innerHTML = list.map(cardMatch).join("") || '<div class="empty">No ' + status + ' matches yet.</div>';
       });
     });
@@ -846,13 +877,83 @@ function onScoreMatchChange(){
   const id=document.getElementById("scoreMatch")?.value;
   const m=db.matches.find(x=>x.id===id);
   if(!m)return;
-  document.getElementById("matchStatus").value=m.status||"upcoming";
+  const statusEl=document.getElementById("matchStatus");
+  if(statusEl){
+    if(![...statusEl.options].some(o=>o.value===m.status)){
+      const opt=document.createElement("option"); opt.value=m.status; opt.textContent=m.status;
+      statusEl.appendChild(opt);
+    }
+    statusEl.value=m.status||"upcoming";
+  }
   document.getElementById("homeScore").value=m.hs||0;
   document.getElementById("awayScore").value=m.as||0;
   const cm=document.getElementById("matchCurrentMinute"); if(cm) cm.value=m.minute||0;
   const du=document.getElementById("matchDurationUpdate"); if(du) du.value=m.duration||40;
 }
-async function updateScore(){if(!isAdmin)return alert("Admin login required.");let id=document.getElementById("scoreMatch").value;if(!id)return alert("Create a fixture first");const duration=Math.max(1,Number(document.getElementById("matchDurationUpdate")?.value)||40);const minute=Math.max(0,Number(document.getElementById("matchCurrentMinute")?.value)||0);const status=document.getElementById("matchStatus").value;const liveStartedAt=status==="live"?new Date(Date.now()-minute*60000).toISOString():null;const {error}=await supabaseApi.from("matches").update({home_score:Math.max(0,+document.getElementById("homeScore").value||0),away_score:Math.max(0,+document.getElementById("awayScore").value||0),status,duration_minutes:duration,current_minute:minute,live_started_at:liveStartedAt}).eq("id",id);if(error)return alert(error.message);await save();}
+function getLiveRunningMinute(m){
+  const total=Math.max(1,Number(m.duration)||40);
+  let running=Number(m.minute)||0;
+  if(m.status==="live"&&m.startedAt){
+    const started=new Date(m.startedAt).getTime();
+    if(!isNaN(started)) running=Math.max(0,Math.floor((Date.now()-started)/60000));
+  }
+  return Math.min(running,total);
+}
+async function updateScore(){
+  if(!isAdmin)return alert("Admin login required.");
+  let id=document.getElementById("scoreMatch").value;
+  if(!id)return alert("Create a fixture first");
+  const duration=Math.max(1,Number(document.getElementById("matchDurationUpdate")?.value)||40);
+  const minute=Math.max(0,Number(document.getElementById("matchCurrentMinute")?.value)||0);
+  const status=document.getElementById("matchStatus").value;
+  const liveStartedAt=status==="live"?new Date(Date.now()-minute*60000).toISOString():null;
+  const {error}=await supabaseApi.from("matches").update({
+    home_score:Math.max(0,+document.getElementById("homeScore").value||0),
+    away_score:Math.max(0,+document.getElementById("awayScore").value||0),
+    status,duration_minutes:duration,current_minute:minute,live_started_at:liveStartedAt
+  }).eq("id",id);
+  if(error)return alert(error.message);
+  await save();
+}
+async function quickMatchAction(action){
+  if(!isAdmin)return alert("Admin login required.");
+  const id=document.getElementById("scoreMatch")?.value;
+  if(!id)return alert("আগে একটি ম্যাচ সিলেক্ট করুন।");
+  const m=db.matches.find(x=>x.id===id);
+  if(!m)return alert("Match not found.");
+  const duration=Math.max(1,Number(document.getElementById("matchDurationUpdate")?.value)||m.duration||40);
+  const hs=Math.max(0,+document.getElementById("homeScore").value||m.hs||0);
+  const as=Math.max(0,+document.getElementById("awayScore").value||m.as||0);
+  let status=action;
+  let minute=Number(document.getElementById("matchCurrentMinute")?.value);
+  if(isNaN(minute)) minute=Number(m.minute)||0;
+  let liveStartedAt=null;
+  if(action==="halftime"){
+    minute=getLiveRunningMinute({...m,duration,minute,status:m.status,startedAt:m.startedAt});
+    status="halftime";
+    liveStartedAt=null;
+  }else if(action==="live"){
+    minute=Math.min(Math.max(0,minute),duration);
+    status="live";
+    liveStartedAt=new Date(Date.now()-minute*60000).toISOString();
+  }else if(action==="completed"){
+    minute=getLiveRunningMinute({...m,duration,minute,status:m.status,startedAt:m.startedAt});
+    status="completed";
+    liveStartedAt=null;
+  }else{
+    return alert("Unknown action");
+  }
+  const {error}=await supabaseApi.from("matches").update({
+    home_score:hs,away_score:as,status,duration_minutes:duration,
+    current_minute:minute,live_started_at:liveStartedAt
+  }).eq("id",id);
+  if(error)return alert(error.message);
+  document.getElementById("matchStatus").value=status;
+  document.getElementById("matchCurrentMinute").value=minute;
+  await save();
+  const labels={live:"Match started / resumed",halftime:"Half Time set — clock paused",completed:"Match completed"};
+  alert(labels[action]||"Updated.");
+}
 function onLineupMatchChange(){
   const matchId=document.getElementById("lineupMatch")?.value;
   const teamSel=document.getElementById("lineupTeam");
@@ -1043,7 +1144,7 @@ async function editTeam(id){
  document.getElementById("teamFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
 }
 async function deleteTeam(id){if(!isAdmin)return alert("Admin login required.");const t=team(id);if(!t||!confirm(`Delete team "${t.name}"? This may fail if fixtures are linked to this team.`))return;const {error}=await supabaseApi.from("teams").delete().eq("id",id);if(error)return alert("Team delete failed: "+error.message);await save();}
-async function editMatch(id){if(!isAdmin)return alert("Admin login required.");const m=db.matches.find(x=>x.id===id);if(!m)return;const round=prompt("Round / match label:",m.round||"");if(round===null)return;const date=prompt("Date & time (YYYY-MM-DDTHH:MM):",m.date?isoToDhakaDateTimeInput(m.date):"");if(date===null)return;const duration=prompt("Total match minutes:",m.duration||40);if(duration===null)return;const minute=prompt("Running minute (0 if not started):",m.minute||0);if(minute===null)return;const hs=prompt("Home score:",m.hs);if(hs===null)return;const as=prompt("Away score:",m.as);if(as===null)return;const status=prompt("Status: upcoming, live, completed",m.status||"upcoming");if(status===null)return;if(!["upcoming","live","completed"].includes(status.trim().toLowerCase()))return alert("Status must be upcoming, live, or completed.");const cleanStatus=status.trim().toLowerCase();const cleanMinute=Math.max(0,Number(minute)||0);const liveStartedAt=cleanStatus==="live"?new Date(Date.now()-cleanMinute*60000).toISOString():null;const {error}=await supabaseApi.from("matches").update({round_label:round.trim(),match_date:dhakaDateTimeToISO(date),venue:FIXED_VENUE,home_score:Math.max(0,Number(hs)||0),away_score:Math.max(0,Number(as)||0),status:cleanStatus,duration_minutes:Math.max(1,Number(duration)||40),current_minute:cleanMinute,live_started_at:liveStartedAt}).eq("id",id);if(error)return alert("Fixture update failed: "+error.message);await save();}
+async function editMatch(id){if(!isAdmin)return alert("Admin login required.");const m=db.matches.find(x=>x.id===id);if(!m)return;const round=prompt("Round / match label:",m.round||"");if(round===null)return;const date=prompt("Date & time (YYYY-MM-DDTHH:MM):",m.date?isoToDhakaDateTimeInput(m.date):"");if(date===null)return;const duration=prompt("Total match minutes:",m.duration||40);if(duration===null)return;const minute=prompt("Running minute (0 if not started):",m.minute||0);if(minute===null)return;const hs=prompt("Home score:",m.hs);if(hs===null)return;const as=prompt("Away score:",m.as);if(as===null)return;const status=prompt("Status: upcoming, live, halftime, completed",m.status||"upcoming");if(status===null)return;if(!["upcoming","live","halftime","completed"].includes(status.trim().toLowerCase()))return alert("Status must be upcoming, live, halftime, or completed.");const cleanStatus=status.trim().toLowerCase();const cleanMinute=Math.max(0,Number(minute)||0);const liveStartedAt=cleanStatus==="live"?new Date(Date.now()-cleanMinute*60000).toISOString():null;const {error}=await supabaseApi.from("matches").update({round_label:round.trim(),match_date:dhakaDateTimeToISO(date),venue:FIXED_VENUE,home_score:Math.max(0,Number(hs)||0),away_score:Math.max(0,Number(as)||0),status:cleanStatus,duration_minutes:Math.max(1,Number(duration)||40),current_minute:cleanMinute,live_started_at:liveStartedAt}).eq("id",id);if(error)return alert("Fixture update failed: "+error.message);await save();}
 async function deleteMatch(id){if(!isAdmin||!confirm("Delete this fixture permanently?"))return;const {error}=await supabaseApi.from("matches").delete().eq("id",id);if(error)return alert("Fixture delete failed: "+error.message);await save();}
 async function editNotice(id){if(!isAdmin)return alert("Admin login required.");const n=db.notices.find(x=>x.id===id);if(!n)return;const message=prompt("Edit announcement:",n.text);if(message===null)return;if(!message.trim())return alert("Announcement cannot be empty.");const {error}=await supabaseApi.from("notices").update({message:message.trim()}).eq("id",id);if(error)return alert("Announcement update failed: "+error.message);await save();}
 async function deleteNotice(id){if(!isAdmin||!confirm("Delete this announcement permanently?"))return;const {error}=await supabaseApi.from("notices").delete().eq("id",id);if(error)return alert("Announcement delete failed: "+error.message);await save();}
@@ -1089,6 +1190,10 @@ function matchClockHtml(m){
     running=Math.min(running,total);
     return `<div class="match-clock live-clock" data-started-at="${esc(m.startedAt||"")}" data-minute="${Number(m.minute)||0}" data-duration="${total}">⏱ ${running}' / ${total}'</div>`;
   }
+  if(m.status==="halftime"){
+    const frozen=Math.min(Number(m.minute)||0,total);
+    return `<div class="match-clock halftime-clock">⏸ HALF TIME · ${frozen}'</div>`;
+  }
   if(m.status==="completed") return `<div class="match-clock">Full time · ${total}'</div>`;
   return `<div class="match-clock">⏱ ${total}' match</div>`;
 }
@@ -1103,25 +1208,28 @@ function refreshLiveClocks(){
 }
 function cardMatch(m){
   let h=team(m.home),a=team(m.away);
-  const statusClass=m.status==="live"?"match-live":(m.status==="completed"?"match-completed":"");
-  const pillClass=m.status==="live"?"pill-live":(m.status==="completed"?"pill-completed":"");
   const isLive=m.status==="live";
-  const showScorers=m.status==="live"||m.status==="completed";
+  const isHalftime=m.status==="halftime";
+  const isActive=isLive||isHalftime;
+  const statusClass=isLive?"match-live":(isHalftime?"match-halftime":(m.status==="completed"?"match-completed":""));
+  const pillClass=isLive?"pill-live":(isHalftime?"pill-halftime":(m.status==="completed"?"pill-completed":""));
+  const showScorers=isActive||m.status==="completed";
   const safeMid=String(m.id).replace(/'/g,"\\'");
-  const homeClick=isLive?`class="match-team-click" onclick="toggleMatchLineup('${safeMid}','${String(m.home||"").replace(/'/g,"\\'")}',event)"`:`class=""`;
-  const awayClick=isLive?`class="match-team-click" onclick="toggleMatchLineup('${safeMid}','${String(m.away||"").replace(/'/g,"\\'")}',event)"`:`class=""`;
-  const homeHint=isLive?`<span class="team-lineup-hint" style="display:inline-flex!important;align-items:center;justify-content:center;gap:4px;margin-top:6px;padding:3px 7px!important;border:1px solid #6effb8!important;border-radius:5px!important;background:#6effb8!important;color:#082c20!important;font-size:9px!important;font-weight:800!important;line-height:1.2!important;letter-spacing:.1px;white-space:nowrap;box-shadow:0 1px 5px #0004">☷ Tap to see lineup</span>`:"";
-  const awayHint=isLive?`<span class="team-lineup-hint" style="display:inline-flex!important;align-items:center;justify-content:center;gap:4px;margin-top:6px;padding:3px 7px!important;border:1px solid #6effb8!important;border-radius:5px!important;background:#6effb8!important;color:#082c20!important;font-size:9px!important;font-weight:800!important;line-height:1.2!important;letter-spacing:.1px;white-space:nowrap;box-shadow:0 1px 5px #0004">☷ Tap to see lineup</span>`:"";
+  const homeClick=isActive?`class="match-team-click" onclick="toggleMatchLineup('${safeMid}','${String(m.home||"").replace(/'/g,"\\'")}',event)"`:`class=""`;
+  const awayClick=isActive?`class="match-team-click" onclick="toggleMatchLineup('${safeMid}','${String(m.away||"").replace(/'/g,"\\'")}',event)"`:`class=""`;
+  const homeHint=isActive?`<span class="team-lineup-hint" style="display:inline-flex!important;align-items:center;justify-content:center;gap:4px;margin-top:6px;padding:3px 7px!important;border:1px solid #6effb8!important;border-radius:5px!important;background:#6effb8!important;color:#082c20!important;font-size:9px!important;font-weight:800!important;line-height:1.2!important;letter-spacing:.1px;white-space:nowrap;box-shadow:0 1px 5px #0004">☷ Tap to see lineup</span>`:"";
+  const awayHint=isActive?`<span class="team-lineup-hint" style="display:inline-flex!important;align-items:center;justify-content:center;gap:4px;margin-top:6px;padding:3px 7px!important;border:1px solid #6effb8!important;border-radius:5px!important;background:#6effb8!important;color:#082c20!important;font-size:9px!important;font-weight:800!important;line-height:1.2!important;letter-spacing:.1px;white-space:nowrap;box-shadow:0 1px 5px #0004">☷ Tap to see lineup</span>`:"";
   const homeScorers=showScorers?scorersHtml(m.id,m.home,false):"";
   const awayScorers=showScorers?scorersHtml(m.id,m.away,true):"";
-  const lineupPanels=isLive?`<div id="match-lineup-${esc(m.id)}-${esc(m.home||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(h?.name||"Home")} — Playing XI</b>${lineupChipsHtml(m.id,m.home)}</div></div><div id="match-lineup-${esc(m.id)}-${esc(m.away||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(a?.name||"Away")} — Playing XI</b>${lineupChipsHtml(m.id,m.away)}</div></div>`:"";
-  return `<div class="card ${statusClass} ${isLive?"live-match-card":""}" style="margin-bottom:10px"><div class="match match-main-row"><div class="match-team home-team" ${homeClick}><b>${esc(h?.name||"TBD")}</b>${homeHint}${homeScorers}</div><div class="match-center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${esc(m.status.toUpperCase())}</span>${matchClockHtml(m)}</div><div class="match-team away-team" ${awayClick}><b>${esc(a?.name||"TBD")}</b>${awayHint}${awayScorers}</div></div><div class="match-meta-row"><span class="match-meta-item">🏆 ${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round||"Match")}</span><span class="match-meta-item">📍 ${esc(m.venue||"Venue TBA")}</span><span class="match-meta-item">🕒 ${esc(dateText(m.date))}</span></div>${lineupPanels}</div>`;
+  const lineupPanels=isActive?`<div id="match-lineup-${esc(m.id)}-${esc(m.home||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(h?.name||"Home")} — Playing XI</b>${lineupChipsHtml(m.id,m.home)}</div></div><div id="match-lineup-${esc(m.id)}-${esc(m.away||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(a?.name||"Away")} — Playing XI</b>${lineupChipsHtml(m.id,m.away)}</div></div>`:"";
+  const pillLabel=isHalftime?"HALF TIME":esc((m.status||"").toUpperCase());
+  return `<div class="card ${statusClass} ${isActive?"live-match-card":""}" style="margin-bottom:10px"><div class="match match-main-row"><div class="match-team home-team" ${homeClick}><b>${esc(h?.name||"TBD")}</b>${homeHint}${homeScorers}</div><div class="match-center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${pillLabel}</span>${matchClockHtml(m)}</div><div class="match-team away-team" ${awayClick}><b>${esc(a?.name||"TBD")}</b>${awayHint}${awayScorers}</div></div><div class="match-meta-row"><span class="match-meta-item">🏆 ${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round||"Match")}</span><span class="match-meta-item">📍 ${esc(m.venue||"Venue TBA")}</span><span class="match-meta-item">🕒 ${esc(dateText(m.date))}</span></div>${lineupPanels}</div>`;
 }
 function toggleTeamPlayers(id){const panel=document.getElementById("team-players-"+id);if(!panel)return;const wasOpen=panel.classList.contains("open");document.querySelectorAll("#teamList .team-player-details.open").forEach(el=>el.classList.remove("open"));if(!wasOpen)panel.classList.add("open");}
 function standings(group){let rows=db.teams.filter(t=>t.group===group).map(t=>({id:t.id,name:t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));db.matches.filter(m=>m.group===group&&m.status==="completed").forEach(m=>{let h=rows.find(x=>x.id===m.home),a=rows.find(x=>x.id===m.away);if(!h||!a)return;h.p++;a.p++;h.gf+=m.hs;h.ga+=m.as;a.gf+=m.as;a.ga+=m.hs;if(m.hs>m.as){h.w++;a.l++;h.pts+=3}else if(m.hs<m.as){a.w++;h.l++;a.pts+=3}else{h.d++;a.d++;h.pts++;a.pts++}});return rows.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf)}
 function render(){document.getElementById("teamCount").textContent=db.teams.length;document.getElementById("groupCount").textContent=new Set(db.teams.map(t=>t.group)).size;document.getElementById("matchCount").textContent=db.matches.length;document.getElementById("completedCount").textContent=db.matches.filter(m=>m.status==="completed").length;
 let teams=db.teams.map(t=>{const members=db.players.filter(p=>p.team===t.id).sort((a,b)=>a.name.localeCompare(b.name));return `<div class="card team-card" onclick="toggleTeamPlayers('${t.id}')"><div class="team"><div class="badge">⚽</div><div style="flex:1"><b class="team-name">${esc(t.name)}</b><small>Group ${esc(t.group)}${t.manager?" · "+esc(t.manager):""}</small></div><span class="pill">${members.length} PLAYER${members.length===1?"":"S"}</span></div><div id="team-players-${esc(t.id)}" class="team-player-details">${members.length?members.map(p=>`<div class="team-player-line"><span>${esc(p.name)}</span><b>${p.goals} goal${p.goals===1?"":"s"}</b></div>`).join(""):'<p class="hint">No players added for this team yet.</p>'}</div></div>`}).join("")||'<div class="empty">No teams added yet. Admin can add participating teams.</div>';document.getElementById("teamList").innerHTML=teams;
-let matches=db.matches.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));document.getElementById("fixtureList").innerHTML=matches.map(cardMatch).join("")||'<div class="empty">Fixtures will appear here when published.</div>';const activeMatchFilter=document.querySelector("#matchFilter button.active")?.dataset.matchFilter||"live";const filteredHomeMatches=matches.filter(m=>m.status===activeMatchFilter);document.getElementById("homeMatches").innerHTML=filteredHomeMatches.map(cardMatch).join("")||`<div class="empty">No ${activeMatchFilter} matches ${activeMatchFilter==="live"?"right now":activeMatchFilter==="upcoming"?"scheduled":"yet"}.</div>`;
+let matches=db.matches.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));document.getElementById("fixtureList").innerHTML=matches.map(cardMatch).join("")||'<div class="empty">Fixtures will appear here when published.</div>';const activeMatchFilter=document.querySelector("#matchFilter button.active")?.dataset.matchFilter||"live";const filteredHomeMatches=matches.filter(m=>activeMatchFilter==="live"?(m.status==="live"||m.status==="halftime"):m.status===activeMatchFilter);document.getElementById("homeMatches").innerHTML=filteredHomeMatches.map(cardMatch).join("")||`<div class="empty">No ${activeMatchFilter} matches ${activeMatchFilter==="live"?"right now":activeMatchFilter==="upcoming"?"scheduled":"yet"}.</div>`;
 let groups=[...new Set(db.teams.map(t=>t.group))].sort();document.getElementById("standingList").innerHTML=groups.map(g=>`<div class="card" style="margin-bottom:13px"><h3>Group ${g}</h3><table class="table"><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${standings(g).map(r=>`<tr><td>${esc(r.name)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div>`).join("")||'<div class="empty">Standings will be calculated after teams and results are added.</div>';
 let ns=db.notices.map(n=>`<div class="card" style="margin-bottom:9px"><b>📢 Tournament Notice</b><p style="margin:7px 0">${esc(n.text)}</p><small class="hint">${dateText(n.date)}</small></div>`).join("")||'<div class="empty">No announcements yet.</div>';document.getElementById("noticeList").innerHTML=ns;document.getElementById("homeNotices").innerHTML=db.notices.slice(0,2).map(n=>`<div class="notice">${esc(n.text)}<div class="hint" style="margin-top:5px">${dateText(n.date)}</div></div>`).join("")||'<div class="hint">No announcements published.</div>';
 updateFixtureTeamOptions();document.getElementById("scoreMatch").innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("")
