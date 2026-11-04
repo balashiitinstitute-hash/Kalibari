@@ -279,6 +279,23 @@ hr{border-top-color:#34384f!important}
   box-shadow:none !important;
 }
 
+/* Match lineup (live players) */
+.match-team-click{cursor:pointer;border-radius:8px;padding:2px 4px;transition:background .15s}
+.match-team-click:hover{background:#ffffff12}
+.match-team-click .team-lineup-hint{display:block;font-size:10px;color:#6effb8;font-weight:700;margin-top:2px;letter-spacing:.3px}
+.match-lineup-panel{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #3dd68c35}
+.match-lineup-panel.open{display:block}
+.match-lineup-side{margin-bottom:10px}
+.match-lineup-side:last-child{margin-bottom:0}
+.match-lineup-side b{display:block;color:#6effb8;font-size:12px;margin-bottom:6px;letter-spacing:.4px}
+.match-lineup-players{display:flex;flex-wrap:wrap;gap:6px}
+.match-lineup-chip{font-size:11px;font-weight:700;padding:5px 9px;border-radius:999px;background:#1a3d2e;color:#b8f5d4;border:1px solid #3dd68c40}
+.match-lineup-empty{font-size:12px;color:#a7aec5}
+.lineup-check-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0;max-height:220px;overflow:auto;padding:4px}
+.lineup-check-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 9px;background:#191d2e;border:1px solid #34384f;border-radius:9px;cursor:pointer}
+.lineup-check-item input{accent-color:#3dd68c;width:16px;height:16px}
+.lineup-check-item:hover{border-color:#3dd68c55}
+
 /* MATCH MOMENTS GALLERY */
 .moments-section{margin-top:30px;padding:20px 0;overflow:hidden}
 .moments-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
@@ -408,6 +425,16 @@ hr{border-top-color:#34384f!important}
   <div class="field"><label>Away score</label><input id="awayScore" type="number" min="0" value="0"></div>
  </div><button class="primary" onclick="updateScore()">Save Match Update</button>
  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+ <h3>Match Lineup · খেলোয়াড় নির্বাচন</h3>
+ <p class="hint">প্রতিটি ম্যাচে কোন খেলোয়াড় খেলবে সেট করুন। Live ম্যাচে টিমে ক্লিক করলে পাবলিক সাইটে দেখা যাবে।</p>
+ <div class="formgrid">
+  <div class="field"><label>Match</label><select id="lineupMatch" onchange="onLineupMatchChange()"></select></div>
+  <div class="field"><label>Team</label><select id="lineupTeam" onchange="onLineupTeamChange()"></select></div>
+ </div>
+ <div id="lineupPlayerChecks" class="lineup-check-list"></div>
+ <div class="actions"><button class="primary" type="button" onclick="saveMatchLineup()">Save Lineup</button></div>
+ <p id="lineupSaveStatus" class="hint" style="margin-top:8px" role="status"></p>
+ <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
  <h3>Player Goal Tracker</h3><p class="hint">Add each player under their team and update their tournament goal total.</p>
  <div class="formgrid"><div class="field"><label>Team</label><select id="playerTeam"></select></div><div class="field"><label>Player name</label><input id="playerName" placeholder="Player full name"></div><div class="field"><label>Total goals</label><input id="playerGoals" type="number" min="0" value="0"></div></div>
  <button class="primary" onclick="addPlayer()">＋ Add Player</button><div class="admin-section"><div class="admin-title"><h3>Manage Player Goals</h3><span class="admin-chip">ADMIN ONLY</span></div><div id="managePlayers"></div></div>
@@ -500,13 +527,14 @@ const supabaseApi = supabaseClient;
 
 let currentUser = null;
 let isAdmin = false;
-let db = {teams:[], matches:[], notices:[], players:[]};
+let db = {teams:[], matches:[], notices:[], players:[], matchPlayers:[]};
 async function loadData(){
   const jobs = [
     ["teams", () => supabaseApi.from("teams").select("*").order("created_at")],
     ["matches", () => supabaseApi.from("matches").select("*").order("match_date")],
     ["notices", () => supabaseApi.from("notices").select("*").order("created_at",{ascending:false})],
-    ["players", () => supabaseApi.from("team_players").select("*").order("goals",{ascending:false})]
+    ["players", () => supabaseApi.from("team_players").select("*").order("goals",{ascending:false})],
+    ["matchPlayers", () => supabaseApi.from("match_players").select("*")]
   ];
   const results = await Promise.allSettled(jobs.map(async ([key, run]) => {
     const result = await Promise.race([
@@ -526,6 +554,7 @@ async function loadData(){
   db.matches = (db.matches||[]).map(x=>({id:x.id,group:x.group_code,round:x.round_label,home:x.home_team_id,away:x.away_team_id,date:x.match_date,venue:x.venue||"",hs:x.home_score||0,as:x.away_score||0,status:x.status}));
   db.notices = (db.notices||[]).map(x=>({id:x.id,text:x.message,date:x.created_at}));
   db.players = (db.players||[]).map(x=>({id:x.id,team:x.team_id,name:x.player_name,goals:Number(x.goals)||0}));
+  db.matchPlayers = (db.matchPlayers||[]).map(x=>({id:x.id,match:x.match_id,team:x.team_id,player:x.player_id}));
   render();
   loadMatchMoments().catch(e => console.error("Match Moments loading error:", e));
   if (isAdmin) {
@@ -718,6 +747,60 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 async function addMatch(){if(!isAdmin)return alert("Admin login required.");let h=document.getElementById("homeTeam").value,a=document.getElementById("awayTeam").value;if(!h||!a||h===a)return alert("Choose two different teams");const {error}=await supabaseApi.from("matches").insert({group_code:document.getElementById("matchGroup").value,round_label:document.getElementById("round").value||"Group Match",home_team_id:h,away_team_id:a,match_date:dhakaDateTimeToISO(document.getElementById("matchDate").value),venue:FIXED_VENUE,home_score:0,away_score:0,status:"upcoming"});if(error)return alert(error.message);await save();}
 async function updateScore(){if(!isAdmin)return alert("Admin login required.");let id=document.getElementById("scoreMatch").value;if(!id)return alert("Create a fixture first");const {error}=await supabaseApi.from("matches").update({home_score:Math.max(0,+document.getElementById("homeScore").value||0),away_score:Math.max(0,+document.getElementById("awayScore").value||0),status:document.getElementById("matchStatus").value}).eq("id",id);if(error)return alert(error.message);await save();}
+function onLineupMatchChange(){
+  const matchId=document.getElementById("lineupMatch")?.value;
+  const teamSel=document.getElementById("lineupTeam");
+  const box=document.getElementById("lineupPlayerChecks");
+  if(!teamSel||!box)return;
+  box.innerHTML="";
+  if(!matchId){teamSel.innerHTML='<option value="">Select team</option>';return;}
+  const m=db.matches.find(x=>x.id===matchId);
+  if(!m){teamSel.innerHTML='<option value="">Select team</option>';return;}
+  const opts=[];
+  const ht=team(m.home), at=team(m.away);
+  if(ht)opts.push(`<option value="${esc(ht.id)}">${esc(ht.name)} (Home)</option>`);
+  if(at)opts.push(`<option value="${esc(at.id)}">${esc(at.name)} (Away)</option>`);
+  teamSel.innerHTML='<option value="">Select team</option>'+opts.join("");
+  onLineupTeamChange();
+}
+function onLineupTeamChange(){
+  const matchId=document.getElementById("lineupMatch")?.value;
+  const teamId=document.getElementById("lineupTeam")?.value;
+  const box=document.getElementById("lineupPlayerChecks");
+  if(!box)return;
+  if(!matchId||!teamId){box.innerHTML='<p class="hint">Select a match and team to choose players.</p>';return;}
+  const members=db.players.filter(p=>p.team===teamId).sort((a,b)=>a.name.localeCompare(b.name));
+  if(!members.length){box.innerHTML='<p class="hint">No players registered for this team yet. Add players first.</p>';return;}
+  const selected=new Set((db.matchPlayers||[]).filter(mp=>mp.match===matchId&&mp.team===teamId).map(mp=>mp.player));
+  box.innerHTML=members.map(p=>`<label class="lineup-check-item"><input type="checkbox" class="lineup-player-check" value="${esc(p.id)}" ${selected.has(p.id)?"checked":""}> ${esc(p.name)}</label>`).join("");
+}
+async function saveMatchLineup(){
+  if(!isAdmin)return alert("Admin login required.");
+  const matchId=document.getElementById("lineupMatch")?.value;
+  const teamId=document.getElementById("lineupTeam")?.value;
+  const status=document.getElementById("lineupSaveStatus");
+  if(!matchId||!teamId)return alert("Select both match and team.");
+  const checks=Array.from(document.querySelectorAll("#lineupPlayerChecks .lineup-player-check:checked")).map(el=>el.value);
+  if(status)status.textContent="Saving lineup...";
+  try{
+    const existing=(db.matchPlayers||[]).filter(mp=>mp.match===matchId&&mp.team===teamId);
+    if(existing.length){
+      const {error}=await supabaseApi.from("match_players").delete().eq("match_id",matchId).eq("team_id",teamId);
+      if(error)throw new Error("Could not clear old lineup: "+error.message);
+    }
+    if(checks.length){
+      const rows=checks.map(pid=>({match_id:matchId,team_id:teamId,player_id:pid}));
+      const {error}=await supabaseApi.from("match_players").insert(rows);
+      if(error)throw new Error("Could not save lineup: "+error.message);
+    }
+    await save();
+    if(status)status.textContent="Lineup saved ("+checks.length+" player"+(checks.length===1?"":"s")+").";
+    alert("Match lineup saved successfully.");
+  }catch(e){
+    if(status)status.textContent=e.message||String(e);
+    alert(e.message||String(e));
+  }
+}
 async function addNotice(){if(!isAdmin)return alert("Admin login required.");let t=document.getElementById("noticeText").value.trim();if(!t)return;const {error}=await supabaseApi.from("notices").insert({message:t});if(error)return alert(error.message);document.getElementById("noticeText").value="";await save();}
 async function addPlayer(){if(!isAdmin)return alert("Admin login required.");const teamId=document.getElementById("playerTeam").value,name=document.getElementById("playerName").value.trim(),goals=Math.max(0,Number(document.getElementById("playerGoals").value)||0);if(!teamId||!name)return alert("Select a team and enter player name.");const {error}=await supabaseApi.from("team_players").insert({team_id:teamId,player_name:name,goals});if(error)return alert("Player save failed: "+error.message);document.getElementById("playerName").value="";document.getElementById("playerGoals").value="0";await save();}
 function toggleManageTeamPlayers(teamId){
@@ -752,7 +835,37 @@ async function deleteMatch(id){if(!isAdmin||!confirm("Delete this fixture perman
 async function editNotice(id){if(!isAdmin)return alert("Admin login required.");const n=db.notices.find(x=>x.id===id);if(!n)return;const message=prompt("Edit announcement:",n.text);if(message===null)return;if(!message.trim())return alert("Announcement cannot be empty.");const {error}=await supabaseApi.from("notices").update({message:message.trim()}).eq("id",id);if(error)return alert("Announcement update failed: "+error.message);await save();}
 async function deleteNotice(id){if(!isAdmin||!confirm("Delete this announcement permanently?"))return;const {error}=await supabaseApi.from("notices").delete().eq("id",id);if(error)return alert("Announcement delete failed: "+error.message);await save();}
 async function resetDemo(){alert("For safety, bulk reset is disabled in this connected version. Delete records from Supabase Table Editor if required.");}
-function cardMatch(m){let h=team(m.home),a=team(m.away);const statusClass=m.status==="live"?"match-live":(m.status==="completed"?"match-completed":"");const pillClass=m.status==="live"?"pill-live":(m.status==="completed"?"pill-completed":"");return `<div class="card ${statusClass}" style="margin-bottom:10px"><div class="match"><div><b>${esc(h?.name||"TBD")}</b><br><small>${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round)}</small></div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${esc(m.status.toUpperCase())}</span></div><div style="text-align:right"><b>${esc(a?.name||"TBD")}</b><br><small>${esc(m.venue||"Venue TBA")}</small></div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div></div>`}
+function getMatchLineupPlayers(matchId, teamId){
+  const ids = (db.matchPlayers||[]).filter(mp=>mp.match===matchId&&mp.team===teamId).map(mp=>mp.player);
+  return (db.players||[]).filter(p=>ids.includes(p.id)).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function lineupChipsHtml(matchId, teamId){
+  const list=getMatchLineupPlayers(matchId, teamId);
+  if(!list.length) return '<span class="match-lineup-empty">Lineup not set yet</span>';
+  return `<div class="match-lineup-players">${list.map(p=>`<span class="match-lineup-chip">${esc(p.name)}</span>`).join("")}</div>`;
+}
+function toggleMatchLineup(matchId, teamId, event){
+  if(event){event.stopPropagation();event.preventDefault();}
+  const panelId="match-lineup-"+matchId+"-"+teamId;
+  const panel=document.getElementById(panelId);
+  if(!panel)return;
+  const wasOpen=panel.classList.contains("open");
+  document.querySelectorAll(".match-lineup-panel.open").forEach(el=>el.classList.remove("open"));
+  if(!wasOpen)panel.classList.add("open");
+}
+function cardMatch(m){
+  let h=team(m.home),a=team(m.away);
+  const statusClass=m.status==="live"?"match-live":(m.status==="completed"?"match-completed":"");
+  const pillClass=m.status==="live"?"pill-live":(m.status==="completed"?"pill-completed":"");
+  const isLive=m.status==="live";
+  const safeMid=String(m.id).replace(/'/g,"\\'");
+  const homeClick=isLive?`class="match-team-click" onclick="toggleMatchLineup('${safeMid}','${String(m.home||"").replace(/'/g,"\\'")}',event)"`:`class=""`;
+  const awayClick=isLive?`class="match-team-click" onclick="toggleMatchLineup('${safeMid}','${String(m.away||"").replace(/'/g,"\\'")}',event)"`:`class=""`;
+  const homeHint=isLive?`<span class="team-lineup-hint">Tap to see lineup</span>`:"";
+  const awayHint=isLive?`<span class="team-lineup-hint">Tap to see lineup</span>`:"";
+  const lineupPanels=isLive?`<div id="match-lineup-${esc(m.id)}-${esc(m.home||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(h?.name||"Home")} — Playing XI</b>${lineupChipsHtml(m.id,m.home)}</div></div><div id="match-lineup-${esc(m.id)}-${esc(m.away||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(a?.name||"Away")} — Playing XI</b>${lineupChipsHtml(m.id,m.away)}</div></div>`:"";
+  return `<div class="card ${statusClass}" style="margin-bottom:10px"><div class="match"><div ${homeClick}><b>${esc(h?.name||"TBD")}</b>${homeHint}<br><small>${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round)}</small></div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${esc(m.status.toUpperCase())}</span></div><div style="text-align:right" ${awayClick}><b>${esc(a?.name||"TBD")}</b>${awayHint}<br><small>${esc(m.venue||"Venue TBA")}</small></div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div>${lineupPanels}</div>`;
+}
 function toggleTeamPlayers(id){const panel=document.getElementById("team-players-"+id);if(!panel)return;const wasOpen=panel.classList.contains("open");document.querySelectorAll("#teamList .team-player-details.open").forEach(el=>el.classList.remove("open"));if(!wasOpen)panel.classList.add("open");}
 function standings(group){let rows=db.teams.filter(t=>t.group===group).map(t=>({id:t.id,name:t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));db.matches.filter(m=>m.group===group&&m.status==="completed").forEach(m=>{let h=rows.find(x=>x.id===m.home),a=rows.find(x=>x.id===m.away);if(!h||!a)return;h.p++;a.p++;h.gf+=m.hs;h.ga+=m.as;a.gf+=m.as;a.ga+=m.hs;if(m.hs>m.as){h.w++;a.l++;h.pts+=3}else if(m.hs<m.as){a.w++;h.l++;a.pts+=3}else{h.d++;a.d++;h.pts++;a.pts++}});return rows.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf)}
 function render(){document.getElementById("teamCount").textContent=db.teams.length;document.getElementById("groupCount").textContent=new Set(db.teams.map(t=>t.group)).size;document.getElementById("matchCount").textContent=db.matches.length;document.getElementById("completedCount").textContent=db.matches.filter(m=>m.status==="completed").length;
@@ -761,6 +874,13 @@ let matches=db.matches.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""
 let groups=[...new Set(db.teams.map(t=>t.group))].sort();document.getElementById("standingList").innerHTML=groups.map(g=>`<div class="card" style="margin-bottom:13px"><h3>Group ${g}</h3><table class="table"><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${standings(g).map(r=>`<tr><td>${esc(r.name)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div>`).join("")||'<div class="empty">Standings will be calculated after teams and results are added.</div>';
 let ns=db.notices.map(n=>`<div class="card" style="margin-bottom:9px"><b>📢 Tournament Notice</b><p style="margin:7px 0">${esc(n.text)}</p><small class="hint">${dateText(n.date)}</small></div>`).join("")||'<div class="empty">No announcements yet.</div>';document.getElementById("noticeList").innerHTML=ns;document.getElementById("homeNotices").innerHTML=db.notices.slice(0,2).map(n=>`<div class="notice">${esc(n.text)}<div class="hint" style="margin-top:5px">${dateText(n.date)}</div></div>`).join("")||'<div class="hint">No announcements published.</div>';
 updateFixtureTeamOptions();document.getElementById("scoreMatch").innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("")
+const lineupMatchEl=document.getElementById("lineupMatch");
+if(lineupMatchEl){
+  const prev=lineupMatchEl.value;
+  lineupMatchEl.innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("");
+  if(prev&&matches.some(m=>m.id===prev)){lineupMatchEl.value=prev;onLineupMatchChange();}
+  else{const lt=document.getElementById("lineupTeam");if(lt)lt.innerHTML='<option value="">Select team</option>';const lb=document.getElementById("lineupPlayerChecks");if(lb)lb.innerHTML='<p class="hint">Select a match and team to choose players.</p>';}
+}
 const playerOpts=db.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");const playerTeam=document.getElementById("playerTeam");if(playerTeam)playerTeam.innerHTML='<option value="">Select team</option>'+playerOpts;
 const scorers=db.players.filter(p=>Number(p.goals)>0).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));document.getElementById("topScorers").innerHTML=scorers.length?`<div class="card"><table class="table"><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Goals</th></tr></thead><tbody>${scorers.map((p,i)=>`<tr><td>${i+1}</td><td><b>${esc(p.name)}</b></td><td>${esc(team(p.team)?.name||"Unknown team")}</td><td><b>${p.goals}</b></td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Player goal records will appear here.</div>';
 // Admin management lists are rendered only after a verified admin login.
