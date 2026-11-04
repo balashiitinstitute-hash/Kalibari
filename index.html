@@ -1086,7 +1086,7 @@ function matchClockHtml(m){
   if(m.status==="live"){
     let running=Number(m.minute)||0;
     if(m.startedAt){const started=new Date(m.startedAt).getTime();if(!isNaN(started))running=Math.max(0,Math.floor((Date.now()-started)/60000));}
-    running=Math.min(running,total+15);
+    running=Math.min(running,total);
     return `<div class="match-clock live-clock" data-started-at="${esc(m.startedAt||"")}" data-minute="${Number(m.minute)||0}" data-duration="${total}">⏱ ${running}' / ${total}'</div>`;
   }
   if(m.status==="completed") return `<div class="match-clock">Full time · ${total}'</div>`;
@@ -1098,7 +1098,7 @@ function refreshLiveClocks(){
     let minute=Number(el.dataset.minute)||0;
     if(!isNaN(started))minute=Math.max(0,Math.floor((Date.now()-started)/60000));
     const total=Math.max(1,Number(el.dataset.duration)||40);
-    el.textContent=`⏱ ${Math.min(minute,total+15)}' / ${total}'`;
+    el.textContent=`⏱ ${Math.min(minute,total)}' / ${total}'`;
   });
 }
 function cardMatch(m){
