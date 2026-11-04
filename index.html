@@ -281,12 +281,14 @@ hr{border-top-color:#34384f!important}
   to{transform:translateX(-50%)}
 }
 #venue[readonly]{background:#f0f3f7;color:#53657b;font-weight:700;cursor:not-allowed}
+
+/* Photo viewer (lightbox): native-style pinch / wheel / double-tap zoom */
 .moment-item{cursor:zoom-in}.moment-item img{cursor:zoom-in}
-.moment-lightbox{position:fixed;inset:0;z-index:99999;background:rgba(3,8,18,.95);display:none;align-items:center;justify-content:center;padding:68px 16px 22px}
+.moment-lightbox{position:fixed;inset:0;z-index:99999;background:rgba(3,8,18,.95);display:none;align-items:center;justify-content:center;padding:68px 16px 22px;overscroll-behavior:contain;touch-action:none}
 .moment-lightbox.open{display:flex}
-.moment-lightbox-image-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
-.moment-lightbox-image{max-width:100%;max-height:100%;object-fit:contain;transform:scale(1);transform-origin:center;user-select:none;-webkit-user-drag:none}
-.moment-lightbox-toolbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #ffffff30;border-radius:14px;background:#111b2ddd;backdrop-filter:blur(10px)}
+.moment-lightbox-image-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;cursor:default;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.moment-lightbox-image{max-width:100%;max-height:100%;object-fit:contain;transform:translate(0px,0px) scale(1);transform-origin:center center;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform}
+.moment-lightbox-toolbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #ffffff30;border-radius:14px;background:#111b2ddd;backdrop-filter:blur(10px);z-index:2}
 .moment-lightbox-toolbar button{min-width:38px;height:36px;border:1px solid #ffffff25;border-radius:9px;background:#263b58;color:#fff;font-size:18px;font-weight:800;cursor:pointer;padding:0 10px}
 .moment-lightbox-zoom{color:#fff;min-width:52px;text-align:center;font-size:12px;font-weight:800}
 .moment-lightbox-close{position:absolute;right:14px;top:13px;width:40px!important;font-size:25px!important;background:#8f2930!important}
@@ -298,8 +300,8 @@ hr{border-top-color:#34384f!important}
 <header class="ticker-header" aria-label="Tournament announcement">
   <div class="tournament-ticker">
     <div class="ticker-track">
-      <span>কালিবাড়ি মিনিবাড় নাইট ফুটবল টুর্নামেন্ট ২০২৬, সিজন -২　 ✦　 ১ম পুরষ্কার - ১টি ফ্রিজ　 ✦　 ২য় পুরষ্কার - ১টি স্মার্ট টিভি　 ✦　 আয়োজনে কালিবাড়ি নাইট রাইডার্স।　 ✦　</span>
-      <span aria-hidden="true">কালিবাড়ি মিনিবাড় নাইট ফুটবল টুর্নামেন্ট ২০২৬, সিজন -২　 ✦　 ১ম পুরষ্কার - ১টি ফ্রিজ　 ✦　 ২য় পুরষ্কার - ১টি স্মার্ট টিভি　 ✦　 আয়োজনে কালিবাড়ি নাইট রাইডার্স।　 ✦　</span>
+      <span>কালিবাড়ি মিনিবাড় নাইট ফুটবল টুর্নামেন্ট ২০২৬, সিজন -২　 ✦　 ১ম পুরষ্কার - ১টি ফ্রিজ　 ✦　 ২য় পুরষ্কার - ১টি স্মার্ট টিভি　 ✦　 আয়োজনে কালিবাড়ি নাইট রাইডার্স।　 ✦　</span>
+      <span aria-hidden="true">কালিবাড়ি মিনিবাড় নাইট ফুটবল টুর্নামেন্ট ২০২৬, সিজন -২　 ✦　 ১ম পুরষ্কার - ১টি ফ্রিজ　 ✦　 ২য় পুরষ্কার - ১টি স্মার্ট টিভি　 ✦　 আয়োজনে কালিবাড়ি নাইট রাইডার্স।　 ✦　</span>
     </div>
   </div>
 </header>
@@ -327,8 +329,8 @@ hr{border-top-color:#34384f!important}
 
 
 <div id="momentLightbox" class="moment-lightbox" role="dialog" aria-modal="true" aria-label="Match photo viewer" onclick="if(event.target===this)closeMomentLightbox()">
-<div class="moment-lightbox-toolbar"><button type="button" onclick="changeMomentZoom(-0.25)" aria-label="Zoom out">−</button><span id="momentZoomLabel" class="moment-lightbox-zoom">100%</span><button type="button" onclick="changeMomentZoom(0.25)" aria-label="Zoom in">＋</button><button type="button" onclick="resetMomentZoom()">Fit</button><button type="button" class="moment-lightbox-close" onclick="closeMomentLightbox()" aria-label="Close">×</button></div>
-<div id="momentLightboxWrap" class="moment-lightbox-image-wrap"><img id="momentLightboxImage" class="moment-lightbox-image" alt="Enlarged tournament match moment"></div></div>
+<div class="moment-lightbox-toolbar"><button type="button" onclick="zoomMomentBy(1/1.25)" aria-label="Zoom out">−</button><span id="momentZoomLabel" class="moment-lightbox-zoom">100%</span><button type="button" onclick="zoomMomentBy(1.25)" aria-label="Zoom in">＋</button><button type="button" onclick="resetMomentZoom()">Fit</button><button type="button" class="moment-lightbox-close" onclick="closeMomentLightbox()" aria-label="Close">×</button></div>
+<div id="momentLightboxWrap" class="moment-lightbox-image-wrap"><img id="momentLightboxImage" class="moment-lightbox-image" alt="Enlarged tournament match moment" draggable="false"></div></div>
 <section id="adminPanel" class="panel">
  <div class="section-head"><h3>Admin Workspace</h3><button class="secondary" onclick="toggleAdmin()">Close</button></div>
  <div class="notice"><b>Connected mode:</b> Public visitors can view tournament data. Only the authenticated admin account registered in app_admins can make changes.</div>
@@ -344,7 +346,7 @@ hr{border-top-color:#34384f!important}
    <div class="player-entry"><input class="new-player-name" placeholder="Player name"><input class="new-player-goals" type="number" min="0" step="1" value="0" placeholder="Goals" aria-label="Player goals"><button type="button" class="danger remove-player" onclick="removeNewTeamPlayer(this)" title="Remove player">×</button></div>
   </div>
   <button type="button" class="secondary" onclick="addNewTeamPlayerRow()">＋ Add Another Player</button>
-  <p class="hint" style="margin-top:7px">প্রতিটি খেলোয়াড়ের নাম লিখুন। গোল না থাকলে 0 রাখুন।</p>
+  <p class="hint" style="margin-top:7px">প্রতিটি খেলোয়াড়ের নাম লিখুন। গোল না থাকলে 0 রাখুন।</p>
  </div>
  <div class="actions"><button id="saveTeamButton" class="primary" type="button" onclick="saveTeamForm()">＋ Add Team</button><button id="cancelTeamEdit" class="secondary hidden" type="button" onclick="cancelTeamEdit()">Cancel Edit</button></div>
  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
@@ -795,19 +797,225 @@ function renderMatchMoments() {
   }
 }
 
-let momentZoom=1,momentTouchStartDistance=0,momentTouchStartZoom=1;
-function applyMomentZoom(){const image=document.getElementById("momentLightboxImage"),label=document.getElementById("momentZoomLabel");if(image)image.style.transform=`scale(${momentZoom})`;if(label)label.textContent=Math.round(momentZoom*100)+"%";}
-function openMomentLightbox(url){const modal=document.getElementById("momentLightbox"),image=document.getElementById("momentLightboxImage");if(!modal||!image)return;image.src=url;momentZoom=1;applyMomentZoom();modal.classList.add("open");document.body.style.overflow="hidden";}
-function closeMomentLightbox(){const modal=document.getElementById("momentLightbox");if(!modal)return;modal.classList.remove("open");document.body.style.overflow="";}
-function changeMomentZoom(delta){momentZoom=Math.min(4,Math.max(1,Number((momentZoom+delta).toFixed(2))));applyMomentZoom();}
-function resetMomentZoom(){momentZoom=1;applyMomentZoom();}
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMomentLightbox();});
-document.addEventListener("DOMContentLoaded",()=>{
- const wrap=document.getElementById("momentLightboxWrap");if(!wrap)return;
- wrap.addEventListener("wheel",e=>{if(!document.getElementById("momentLightbox").classList.contains("open"))return;e.preventDefault();changeMomentZoom(e.deltaY<0?.15:-.15);},{passive:false});
- wrap.addEventListener("touchstart",e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;momentTouchStartDistance=Math.hypot(dx,dy);momentTouchStartZoom=momentZoom;}},{passive:true});
- wrap.addEventListener("touchmove",e=>{if(e.touches.length===2&&momentTouchStartDistance>0){e.preventDefault();const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;momentZoom=Math.min(4,Math.max(1,momentTouchStartZoom*Math.hypot(dx,dy)/momentTouchStartDistance));applyMomentZoom();}},{passive:false});
- wrap.addEventListener("touchend",()=>{momentTouchStartDistance=0;});
+/* ==================================
+   PHOTO VIEWER (LIGHTBOX)
+   - Pinch to zoom (phone / tablet), mouse wheel or trackpad pinch (computer)
+   - Double-tap / double-click to zoom in and out
+   - Drag with finger or mouse to move around when zoomed in
+   - Phone Back button closes only the viewer (you stay on the site, same scroll position)
+================================== */
+const MZ = { scale: 1, x: 0, y: 0, min: 1, max: 5 };
+let momentLightboxOpen = false;
+let momentSavedScrollY = 0;
+const momentPointers = new Map();
+let momentPinch = null;
+let momentPan = null;
+let momentTap = { time: 0, x: 0, y: 0 };
+let momentMoved = false;
+let momentDownInfo = null;
+
+function momentEls() {
+  return {
+    modal: document.getElementById("momentLightbox"),
+    wrap: document.getElementById("momentLightboxWrap"),
+    img: document.getElementById("momentLightboxImage"),
+    label: document.getElementById("momentZoomLabel")
+  };
+}
+
+function clampMomentPan() {
+  const { wrap, img } = momentEls();
+  if (!wrap || !img) return;
+  if (MZ.scale <= 1.001) { MZ.x = 0; MZ.y = 0; return; }
+  const w = img.offsetWidth * MZ.scale, h = img.offsetHeight * MZ.scale;
+  const maxX = Math.max(0, (w - wrap.clientWidth) / 2);
+  const maxY = Math.max(0, (h - wrap.clientHeight) / 2);
+  MZ.x = Math.min(maxX, Math.max(-maxX, MZ.x));
+  MZ.y = Math.min(maxY, Math.max(-maxY, MZ.y));
+}
+
+function applyMomentZoom(animate) {
+  const { wrap, img, label } = momentEls();
+  if (!img) return;
+  clampMomentPan();
+  img.style.transition = animate ? "transform .18s ease-out" : "none";
+  img.style.transform = "translate(" + MZ.x + "px," + MZ.y + "px) scale(" + MZ.scale + ")";
+  if (label) label.textContent = Math.round(MZ.scale * 100) + "%";
+  if (wrap) wrap.style.cursor = MZ.scale > 1.001 ? "grab" : "default";
+}
+
+/* Zoom while keeping the point under the finger / cursor in place */
+function setMomentScaleAround(newScale, clientX, clientY) {
+  const { wrap } = momentEls();
+  if (!wrap) return;
+  newScale = Math.min(MZ.max, Math.max(MZ.min, newScale));
+  const r = wrap.getBoundingClientRect();
+  const px = clientX - (r.left + r.width / 2);
+  const py = clientY - (r.top + r.height / 2);
+  const ratio = newScale / MZ.scale;
+  MZ.x = px - (px - MZ.x) * ratio;
+  MZ.y = py - (py - MZ.y) * ratio;
+  MZ.scale = newScale;
+}
+
+function zoomMomentBy(factor) {
+  const { wrap } = momentEls();
+  if (!wrap) return;
+  const r = wrap.getBoundingClientRect();
+  setMomentScaleAround(MZ.scale * factor, r.left + r.width / 2, r.top + r.height / 2);
+  applyMomentZoom(true);
+}
+
+function resetMomentZoom() {
+  MZ.scale = 1; MZ.x = 0; MZ.y = 0;
+  applyMomentZoom(true);
+}
+
+function openMomentLightbox(url) {
+  const { modal, img } = momentEls();
+  if (!modal || !img) return;
+  momentSavedScrollY = window.scrollY || window.pageYOffset || 0;
+  img.src = url;
+  MZ.scale = 1; MZ.x = 0; MZ.y = 0;
+  momentPointers.clear(); momentPinch = null; momentPan = null;
+  applyMomentZoom(false);
+  modal.classList.add("open");
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+  if (!momentLightboxOpen) {
+    momentLightboxOpen = true;
+    /* Adds one history step so the phone Back button closes the viewer instead of leaving the site */
+    try { history.pushState({ momentViewer: true }, "", location.href); } catch (e) {}
+  }
+}
+
+function closeMomentLightbox(fromBrowserBack) {
+  if (!momentLightboxOpen) return;
+  const { modal, img } = momentEls();
+  momentLightboxOpen = false;
+  if (modal) modal.classList.remove("open");
+  if (img) { img.removeAttribute("src"); }
+  momentPointers.clear(); momentPinch = null; momentPan = null;
+  document.body.style.overflow = "";
+  document.documentElement.style.overflow = "";
+  /* Put the page back exactly where it was before the photo was opened */
+  window.scrollTo(0, momentSavedScrollY);
+  setTimeout(function () { window.scrollTo(0, momentSavedScrollY); }, 30);
+  if (fromBrowserBack !== true) {
+    /* Closed with the X button / Esc: remove the extra history step we added */
+    try { if (history.state && history.state.momentViewer) history.back(); } catch (e) {}
+  }
+}
+
+window.addEventListener("popstate", function () {
+  if (momentLightboxOpen) closeMomentLightbox(true);
+});
+
+document.addEventListener("keydown", function (e) {
+  if (!momentLightboxOpen) return;
+  if (e.key === "Escape") closeMomentLightbox();
+  else if (e.key === "+" || e.key === "=") zoomMomentBy(1.25);
+  else if (e.key === "-" || e.key === "_") zoomMomentBy(1 / 1.25);
+  else if (e.key === "0") resetMomentZoom();
+});
+
+window.addEventListener("resize", function () {
+  if (momentLightboxOpen) applyMomentZoom(false);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  const { wrap } = momentEls();
+  if (!wrap) return;
+
+  /* Mouse wheel / trackpad pinch (computer) */
+  wrap.addEventListener("wheel", function (e) {
+    if (!momentLightboxOpen) return;
+    e.preventDefault();
+    let dy = e.deltaY;
+    if (e.deltaMode === 1) dy *= 33;
+    const speed = e.ctrlKey ? 0.01 : 0.0015;
+    setMomentScaleAround(MZ.scale * Math.exp(-dy * speed), e.clientX, e.clientY);
+    applyMomentZoom(false);
+  }, { passive: false });
+
+  /* Stop the whole page from zooming on iPhone / iPad while using the viewer */
+  ["gesturestart", "gesturechange", "gestureend"].forEach(function (name) {
+    wrap.addEventListener(name, function (e) { e.preventDefault(); });
+  });
+
+  wrap.addEventListener("pointerdown", function (e) {
+    if (!momentLightboxOpen) return;
+    try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
+    momentPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (momentPointers.size === 1) {
+      momentMoved = false;
+      momentDownInfo = { x: e.clientX, y: e.clientY, time: Date.now() };
+      momentPan = { x: e.clientX, y: e.clientY, ox: MZ.x, oy: MZ.y };
+    } else if (momentPointers.size === 2) {
+      momentMoved = true;
+      const pts = Array.from(momentPointers.values());
+      momentPinch = {
+        dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1,
+        scale: MZ.scale,
+        mx: (pts[0].x + pts[1].x) / 2,
+        my: (pts[0].y + pts[1].y) / 2
+      };
+      momentPan = null;
+    }
+  });
+
+  wrap.addEventListener("pointermove", function (e) {
+    if (!momentPointers.has(e.pointerId)) return;
+    momentPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (momentPointers.size >= 2 && momentPinch) {
+      const pts = Array.from(momentPointers.values());
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+      const mx = (pts[0].x + pts[1].x) / 2, my = (pts[0].y + pts[1].y) / 2;
+      setMomentScaleAround(momentPinch.scale * dist / momentPinch.dist, mx, my);
+      MZ.x += mx - momentPinch.mx;
+      MZ.y += my - momentPinch.my;
+      momentPinch.mx = mx; momentPinch.my = my;
+      applyMomentZoom(false);
+    } else if (momentPointers.size === 1 && momentPan) {
+      if (momentDownInfo && Math.hypot(e.clientX - momentDownInfo.x, e.clientY - momentDownInfo.y) > 8) momentMoved = true;
+      if (MZ.scale > 1.001) {
+        MZ.x = momentPan.ox + (e.clientX - momentPan.x);
+        MZ.y = momentPan.oy + (e.clientY - momentPan.y);
+        applyMomentZoom(false);
+        wrap.style.cursor = "grabbing";
+      }
+    }
+  });
+
+  function endPointer(e) {
+    if (!momentPointers.has(e.pointerId)) return;
+    momentPointers.delete(e.pointerId);
+    try { wrap.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (momentPointers.size < 2) momentPinch = null;
+    if (momentPointers.size === 1) {
+      /* One finger left after a pinch: continue panning without a jump */
+      const p = Array.from(momentPointers.values())[0];
+      momentPan = { x: p.x, y: p.y, ox: MZ.x, oy: MZ.y };
+    }
+    if (momentPointers.size === 0) {
+      momentPan = null;
+      wrap.style.cursor = MZ.scale > 1.001 ? "grab" : "default";
+      /* Double-tap / double-click: zoom in or back out */
+      if (e.type === "pointerup" && !momentMoved && momentDownInfo && Date.now() - momentDownInfo.time < 350) {
+        const now = Date.now();
+        if (now - momentTap.time < 320 && Math.hypot(e.clientX - momentTap.x, e.clientY - momentTap.y) < 35) {
+          if (MZ.scale > 1.05) { MZ.scale = 1; MZ.x = 0; MZ.y = 0; }
+          else setMomentScaleAround(2.5, e.clientX, e.clientY);
+          applyMomentZoom(true);
+          momentTap = { time: 0, x: 0, y: 0 };
+        } else {
+          momentTap = { time: now, x: e.clientX, y: e.clientY };
+        }
+      }
+    }
+  }
+  wrap.addEventListener("pointerup", endPointer);
+  wrap.addEventListener("pointercancel", endPointer);
 });
 
 async function uploadMatchMoments() {
