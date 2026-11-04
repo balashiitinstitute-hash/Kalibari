@@ -295,6 +295,12 @@ hr{border-top-color:#34384f!important}
 .lineup-check-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 9px;background:#191d2e;border:1px solid #34384f;border-radius:9px;cursor:pointer}
 .lineup-check-item input{accent-color:#3dd68c;width:16px;height:16px}
 .lineup-check-item:hover{border-color:#3dd68c55}
+.match-scorers-line{margin-top:6px;font-size:11px;line-height:1.45;color:#b8f5d4}
+.match-scorers-line strong{color:#6effb8;font-weight:800}
+.match-scorer-item{display:inline}
+.match-scorer-item:not(:last-child)::after{content:" · "}
+.card.match-completed .match-scorers-line{color:#a7aec5}
+.card.match-completed .match-scorers-line strong{color:#c5cad8}
 
 /* MATCH MOMENTS GALLERY */
 .moments-section{margin-top:30px;padding:20px 0;overflow:hidden}
@@ -435,6 +441,21 @@ hr{border-top-color:#34384f!important}
  <div class="actions"><button class="primary" type="button" onclick="saveMatchLineup()">Save Lineup</button></div>
  <p id="lineupSaveStatus" class="hint" style="margin-top:8px" role="status"></p>
  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+ <h3>Match Goal Scorers · ম্যাচের গোল</h3>
+ <p class="hint">Live ম্যাচে কে কয়টা গোল করেছে সেট করুন। টিমের নিচে নাম দেখা যাবে।</p>
+ <div class="formgrid">
+  <div class="field"><label>Match</label><select id="scorerMatch" onchange="onScorerMatchChange()"></select></div>
+  <div class="field"><label>Team</label><select id="scorerTeam" onchange="onScorerTeamChange()"></select></div>
+  <div class="field"><label>Player</label><select id="scorerPlayer"></select></div>
+  <div class="field"><label>Goals in this match</label><input id="scorerGoals" type="number" min="1" value="1"></div>
+ </div>
+ <div class="actions">
+  <button class="primary" type="button" onclick="saveMatchScorer()">Save / Update Scorer</button>
+  <button class="danger" type="button" onclick="removeMatchScorer()">Remove Scorer</button>
+ </div>
+ <p id="scorerSaveStatus" class="hint" style="margin-top:8px" role="status"></p>
+ <div id="scorerListPreview" style="margin-top:10px"></div>
+ <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
  <h3>Player Goal Tracker</h3><p class="hint">Add each player under their team and update their tournament goal total.</p>
  <div class="formgrid"><div class="field"><label>Team</label><select id="playerTeam"></select></div><div class="field"><label>Player name</label><input id="playerName" placeholder="Player full name"></div><div class="field"><label>Total goals</label><input id="playerGoals" type="number" min="0" value="0"></div></div>
  <button class="primary" onclick="addPlayer()">＋ Add Player</button><div class="admin-section"><div class="admin-title"><h3>Manage Player Goals</h3><span class="admin-chip">ADMIN ONLY</span></div><div id="managePlayers"></div></div>
@@ -527,14 +548,15 @@ const supabaseApi = supabaseClient;
 
 let currentUser = null;
 let isAdmin = false;
-let db = {teams:[], matches:[], notices:[], players:[], matchPlayers:[]};
+let db = {teams:[], matches:[], notices:[], players:[], matchPlayers:[], matchScorers:[]};
 async function loadData(){
   const jobs = [
     ["teams", () => supabaseApi.from("teams").select("*").order("created_at")],
     ["matches", () => supabaseApi.from("matches").select("*").order("match_date")],
     ["notices", () => supabaseApi.from("notices").select("*").order("created_at",{ascending:false})],
     ["players", () => supabaseApi.from("team_players").select("*").order("goals",{ascending:false})],
-    ["matchPlayers", () => supabaseApi.from("match_players").select("*")]
+    ["matchPlayers", () => supabaseApi.from("match_players").select("*")],
+    ["matchScorers", () => supabaseApi.from("match_scorers").select("*")]
   ];
   const results = await Promise.allSettled(jobs.map(async ([key, run]) => {
     const result = await Promise.race([
@@ -555,6 +577,7 @@ async function loadData(){
   db.notices = (db.notices||[]).map(x=>({id:x.id,text:x.message,date:x.created_at}));
   db.players = (db.players||[]).map(x=>({id:x.id,team:x.team_id,name:x.player_name,goals:Number(x.goals)||0}));
   db.matchPlayers = (db.matchPlayers||[]).map(x=>({id:x.id,match:x.match_id,team:x.team_id,player:x.player_id}));
+  db.matchScorers = (db.matchScorers||[]).map(x=>({id:x.id,match:x.match_id,team:x.team_id,player:x.player_id,goals:Number(x.goals)||0}));
   render();
   loadMatchMoments().catch(e => console.error("Match Moments loading error:", e));
   if (isAdmin) {
@@ -801,6 +824,103 @@ async function saveMatchLineup(){
     alert(e.message||String(e));
   }
 }
+function onScorerMatchChange(){
+  const matchId=document.getElementById("scorerMatch")?.value;
+  const teamSel=document.getElementById("scorerTeam");
+  const playerSel=document.getElementById("scorerPlayer");
+  if(!teamSel||!playerSel)return;
+  playerSel.innerHTML='<option value="">Select player</option>';
+  if(!matchId){teamSel.innerHTML='<option value="">Select team</option>';renderScorerPreview();return;}
+  const m=db.matches.find(x=>x.id===matchId);
+  if(!m){teamSel.innerHTML='<option value="">Select team</option>';renderScorerPreview();return;}
+  const opts=[];
+  const ht=team(m.home), at=team(m.away);
+  if(ht)opts.push(`<option value="${esc(ht.id)}">${esc(ht.name)} (Home)</option>`);
+  if(at)opts.push(`<option value="${esc(at.id)}">${esc(at.name)} (Away)</option>`);
+  teamSel.innerHTML='<option value="">Select team</option>'+opts.join("");
+  onScorerTeamChange();
+  renderScorerPreview();
+}
+function onScorerTeamChange(){
+  const matchId=document.getElementById("scorerMatch")?.value;
+  const teamId=document.getElementById("scorerTeam")?.value;
+  const playerSel=document.getElementById("scorerPlayer");
+  if(!playerSel)return;
+  if(!teamId){playerSel.innerHTML='<option value="">Select player</option>';return;}
+  const lineupIds=new Set((db.matchPlayers||[]).filter(mp=>mp.match===matchId&&mp.team===teamId).map(mp=>mp.player));
+  let members=db.players.filter(p=>p.team===teamId).sort((a,b)=>a.name.localeCompare(b.name));
+  if(lineupIds.size){
+    const inLineup=members.filter(p=>lineupIds.has(p.id));
+    if(inLineup.length) members=inLineup;
+  }
+  playerSel.innerHTML='<option value="">Select player</option>'+members.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+  const existing=(db.matchScorers||[]).find(s=>s.match===matchId&&s.team===teamId&&s.player===playerSel.value);
+  if(existing) document.getElementById("scorerGoals").value=existing.goals;
+}
+function renderScorerPreview(){
+  const box=document.getElementById("scorerListPreview");
+  if(!box)return;
+  const matchId=document.getElementById("scorerMatch")?.value;
+  if(!matchId){box.innerHTML="";return;}
+  const rows=(db.matchScorers||[]).filter(s=>s.match===matchId&&s.goals>0)
+    .map(s=>{
+      const p=db.players.find(x=>x.id===s.player);
+      const t=team(s.team);
+      return {name:p?.name||"Unknown",teamName:t?.name||"Team",goals:s.goals,team:s.team};
+    })
+    .sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));
+  if(!rows.length){box.innerHTML='<p class="hint">No scorers recorded for this match yet.</p>';return;}
+  box.innerHTML='<div class="admin-section" style="margin:0"><b style="display:block;margin-bottom:8px">Current scorers</b>'+
+    rows.map(r=>`<div class="manage-row"><div class="manage-meta"><b>${esc(r.name)}</b><small>${esc(r.teamName)} · ${r.goals} goal${r.goals===1?"":"s"}</small></div></div>`).join("")+
+    "</div>";
+}
+async function saveMatchScorer(){
+  if(!isAdmin)return alert("Admin login required.");
+  const matchId=document.getElementById("scorerMatch")?.value;
+  const teamId=document.getElementById("scorerTeam")?.value;
+  const playerId=document.getElementById("scorerPlayer")?.value;
+  const goals=Math.max(1,Number(document.getElementById("scorerGoals")?.value)||1);
+  const status=document.getElementById("scorerSaveStatus");
+  if(!matchId||!teamId||!playerId)return alert("Select match, team and player.");
+  if(status)status.textContent="Saving scorer...";
+  try{
+    const existing=(db.matchScorers||[]).find(s=>s.match===matchId&&s.player===playerId);
+    if(existing){
+      const {error}=await supabaseApi.from("match_scorers").update({goals, team_id:teamId}).eq("id",existing.id);
+      if(error)throw new Error(error.message);
+    }else{
+      const {error}=await supabaseApi.from("match_scorers").insert({match_id:matchId,team_id:teamId,player_id:playerId,goals});
+      if(error)throw new Error(error.message);
+    }
+    await save();
+    if(status)status.textContent="Scorer saved.";
+    renderScorerPreview();
+    alert("Match scorer updated.");
+  }catch(e){
+    if(status)status.textContent=e.message||String(e);
+    alert("Could not save scorer: "+(e.message||e));
+  }
+}
+async function removeMatchScorer(){
+  if(!isAdmin)return alert("Admin login required.");
+  const matchId=document.getElementById("scorerMatch")?.value;
+  const playerId=document.getElementById("scorerPlayer")?.value;
+  const status=document.getElementById("scorerSaveStatus");
+  if(!matchId||!playerId)return alert("Select match and player to remove.");
+  const existing=(db.matchScorers||[]).find(s=>s.match===matchId&&s.player===playerId);
+  if(!existing)return alert("This player has no scorer record for this match.");
+  if(!confirm("Remove this scorer from the match?"))return;
+  try{
+    const {error}=await supabaseApi.from("match_scorers").delete().eq("id",existing.id);
+    if(error)throw new Error(error.message);
+    await save();
+    if(status)status.textContent="Scorer removed.";
+    renderScorerPreview();
+  }catch(e){
+    if(status)status.textContent=e.message||String(e);
+    alert("Could not remove scorer: "+(e.message||e));
+  }
+}
 async function addNotice(){if(!isAdmin)return alert("Admin login required.");let t=document.getElementById("noticeText").value.trim();if(!t)return;const {error}=await supabaseApi.from("notices").insert({message:t});if(error)return alert(error.message);document.getElementById("noticeText").value="";await save();}
 async function addPlayer(){if(!isAdmin)return alert("Admin login required.");const teamId=document.getElementById("playerTeam").value,name=document.getElementById("playerName").value.trim(),goals=Math.max(0,Number(document.getElementById("playerGoals").value)||0);if(!teamId||!name)return alert("Select a team and enter player name.");const {error}=await supabaseApi.from("team_players").insert({team_id:teamId,player_name:name,goals});if(error)return alert("Player save failed: "+error.message);document.getElementById("playerName").value="";document.getElementById("playerGoals").value="0";await save();}
 function toggleManageTeamPlayers(teamId){
@@ -844,6 +964,21 @@ function lineupChipsHtml(matchId, teamId){
   if(!list.length) return '<span class="match-lineup-empty">Lineup not set yet</span>';
   return `<div class="match-lineup-players">${list.map(p=>`<span class="match-lineup-chip">${esc(p.name)}</span>`).join("")}</div>`;
 }
+function getMatchScorers(matchId, teamId){
+  return (db.matchScorers||[])
+    .filter(s=>s.match===matchId&&s.team===teamId&&s.goals>0)
+    .map(s=>{
+      const p=db.players.find(x=>x.id===s.player);
+      return {name:p?.name||"Unknown",goals:s.goals};
+    })
+    .sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));
+}
+function scorersHtml(matchId, teamId, alignRight){
+  const list=getMatchScorers(matchId, teamId);
+  if(!list.length) return "";
+  const style=alignRight?' style="text-align:right"':"";
+  return `<div class="match-scorers-line"${style}><strong>⚽</strong> ${list.map(s=>`<span class="match-scorer-item">${esc(s.name)} (${s.goals})</span>`).join("")}</div>`;
+}
 function toggleMatchLineup(matchId, teamId, event){
   if(event){event.stopPropagation();event.preventDefault();}
   const panelId="match-lineup-"+matchId+"-"+teamId;
@@ -858,13 +993,16 @@ function cardMatch(m){
   const statusClass=m.status==="live"?"match-live":(m.status==="completed"?"match-completed":"");
   const pillClass=m.status==="live"?"pill-live":(m.status==="completed"?"pill-completed":"");
   const isLive=m.status==="live";
+  const showScorers=m.status==="live"||m.status==="completed";
   const safeMid=String(m.id).replace(/'/g,"\\'");
   const homeClick=isLive?`class="match-team-click" onclick="toggleMatchLineup('${safeMid}','${String(m.home||"").replace(/'/g,"\\'")}',event)"`:`class=""`;
   const awayClick=isLive?`class="match-team-click" onclick="toggleMatchLineup('${safeMid}','${String(m.away||"").replace(/'/g,"\\'")}',event)"`:`class=""`;
   const homeHint=isLive?`<span class="team-lineup-hint">Tap to see lineup</span>`:"";
   const awayHint=isLive?`<span class="team-lineup-hint">Tap to see lineup</span>`:"";
+  const homeScorers=showScorers?scorersHtml(m.id,m.home,false):"";
+  const awayScorers=showScorers?scorersHtml(m.id,m.away,true):"";
   const lineupPanels=isLive?`<div id="match-lineup-${esc(m.id)}-${esc(m.home||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(h?.name||"Home")} — Playing XI</b>${lineupChipsHtml(m.id,m.home)}</div></div><div id="match-lineup-${esc(m.id)}-${esc(m.away||"")}" class="match-lineup-panel"><div class="match-lineup-side"><b>⚽ ${esc(a?.name||"Away")} — Playing XI</b>${lineupChipsHtml(m.id,m.away)}</div></div>`:"";
-  return `<div class="card ${statusClass}" style="margin-bottom:10px"><div class="match"><div ${homeClick}><b>${esc(h?.name||"TBD")}</b>${homeHint}<br><small>${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round)}</small></div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${esc(m.status.toUpperCase())}</span></div><div style="text-align:right" ${awayClick}><b>${esc(a?.name||"TBD")}</b>${awayHint}<br><small>${esc(m.venue||"Venue TBA")}</small></div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div>${lineupPanels}</div>`;
+  return `<div class="card ${statusClass}" style="margin-bottom:10px"><div class="match"><div ${homeClick}><b>${esc(h?.name||"TBD")}</b>${homeHint}<br><small>${KNOCKOUT_STAGES.includes(m.group)?esc(m.group):"Group "+esc(m.group)} · ${esc(m.round)}</small>${homeScorers}</div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill ${pillClass}">${esc(m.status.toUpperCase())}</span></div><div style="text-align:right" ${awayClick}><b>${esc(a?.name||"TBD")}</b>${awayHint}<br><small>${esc(m.venue||"Venue TBA")}</small>${awayScorers}</div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div>${lineupPanels}</div>`;
 }
 function toggleTeamPlayers(id){const panel=document.getElementById("team-players-"+id);if(!panel)return;const wasOpen=panel.classList.contains("open");document.querySelectorAll("#teamList .team-player-details.open").forEach(el=>el.classList.remove("open"));if(!wasOpen)panel.classList.add("open");}
 function standings(group){let rows=db.teams.filter(t=>t.group===group).map(t=>({id:t.id,name:t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));db.matches.filter(m=>m.group===group&&m.status==="completed").forEach(m=>{let h=rows.find(x=>x.id===m.home),a=rows.find(x=>x.id===m.away);if(!h||!a)return;h.p++;a.p++;h.gf+=m.hs;h.ga+=m.as;a.gf+=m.as;a.ga+=m.hs;if(m.hs>m.as){h.w++;a.l++;h.pts+=3}else if(m.hs<m.as){a.w++;h.l++;a.pts+=3}else{h.d++;a.d++;h.pts++;a.pts++}});return rows.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf)}
@@ -880,6 +1018,17 @@ if(lineupMatchEl){
   lineupMatchEl.innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("");
   if(prev&&matches.some(m=>m.id===prev)){lineupMatchEl.value=prev;onLineupMatchChange();}
   else{const lt=document.getElementById("lineupTeam");if(lt)lt.innerHTML='<option value="">Select team</option>';const lb=document.getElementById("lineupPlayerChecks");if(lb)lb.innerHTML='<p class="hint">Select a match and team to choose players.</p>';}
+}
+const scorerMatchEl=document.getElementById("scorerMatch");
+if(scorerMatchEl){
+  const prevS=scorerMatchEl.value;
+  scorerMatchEl.innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("");
+  if(prevS&&matches.some(m=>m.id===prevS)){scorerMatchEl.value=prevS;onScorerMatchChange();}
+  else{
+    const st=document.getElementById("scorerTeam");if(st)st.innerHTML='<option value="">Select team</option>';
+    const sp=document.getElementById("scorerPlayer");if(sp)sp.innerHTML='<option value="">Select player</option>';
+    const prevBox=document.getElementById("scorerListPreview");if(prevBox)prevBox.innerHTML="";
+  }
 }
 const playerOpts=db.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");const playerTeam=document.getElementById("playerTeam");if(playerTeam)playerTeam.innerHTML='<option value="">Select team</option>'+playerOpts;
 const scorers=db.players.filter(p=>Number(p.goals)>0).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));document.getElementById("topScorers").innerHTML=scorers.length?`<div class="card"><table class="table"><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Goals</th></tr></thead><tbody>${scorers.map((p,i)=>`<tr><td>${i+1}</td><td><b>${esc(p.name)}</b></td><td>${esc(team(p.team)?.name||"Unknown team")}</td><td><b>${p.goals}</b></td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Player goal records will appear here.</div>';
