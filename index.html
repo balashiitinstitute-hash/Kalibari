@@ -26,7 +26,7 @@ body{background:#f4f7fb;color:#142238}header{background:linear-gradient(115deg,#
 @media(max-width:650px){.hero{padding:21px;border-radius:18px}.panel{padding:14px}.manage-row{align-items:flex-start;flex-direction:column}.manage-actions{width:100%}}
 
 
-.team-card{display:block;cursor:pointer}.team-card .team{width:100%}.team-card .team-name{color:#143452}.team-card .team-name:hover{text-decoration:underline}.team-player-details{display:none;border-top:1px solid var(--line);margin-top:12px;padding-top:10px}.team-player-details.open{display:block}.team-player-line{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;font-size:13px;border-bottom:1px solid #f0f3f6}.team-player-line:last-child{border-bottom:0}.player-entry{display:grid;grid-template-columns:minmax(0,1fr) 100px auto;gap:8px;align-items:center;margin-bottom:8px}.player-entry input{min-width:0}.player-entry .remove-player{padding:9px 11px}@media(max-width:500px){.player-entry{grid-template-columns:minmax(0,1fr) 75px auto;gap:5px}}
+#teamList{align-items:start}.team-card{display:block;cursor:pointer}.team-card .team{width:100%}.team-card .team-name{color:#143452}.team-card .team-name:hover{text-decoration:underline}.team-player-details{display:none;border-top:1px solid var(--line);margin-top:12px;padding-top:10px}.team-player-details.open{display:block}.team-player-line{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;font-size:13px;border-bottom:1px solid #f0f3f6}.team-player-line:last-child{border-bottom:0}.player-entry{display:grid;grid-template-columns:minmax(0,1fr) 100px auto;gap:8px;align-items:center;margin-bottom:8px}.player-entry input{min-width:0}.player-entry .remove-player{padding:9px 11px}@media(max-width:500px){.player-entry{grid-template-columns:minmax(0,1fr) 75px auto;gap:5px}}
 
 .player-team-group{border:1px solid #e7edf4;border-radius:12px;margin:9px 0;overflow:hidden;background:#fff}
 .player-team-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border:0;background:#f8fafc;color:#172338;text-align:left;font:inherit;cursor:pointer}
@@ -256,10 +256,30 @@ hr{border-top-color:#34384f!important}
 @media(max-width:650px){.moment-item{height:125px}.moments-section{margin-top:22px}.moments-heading h3{font-size:17px}}
 @media(prefers-reduced-motion:reduce){.moments-track{animation:none}}
 
+
+/* Tournament announcement ticker */
+.tournament-header .top{justify-content:flex-start;min-height:56px}
+.tournament-ticker{width:50%;max-width:50%;overflow:hidden;white-space:nowrap;padding:14px 0;border-top:1px solid #b8a1ff55;border-bottom:1px solid #b8a1ff55}
+.tournament-ticker-track{display:flex;width:max-content;animation:tournamentTickerLTR 34s linear infinite}
+.tournament-ticker-track span{flex:0 0 auto;padding-right:70px;color:#f5eaff;font-size:clamp(15px,1.5vw,19px);font-weight:800;letter-spacing:.2px}
+@keyframes tournamentTickerLTR{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+.tournament-ticker:hover .tournament-ticker-track{animation-play-state:paused}
+#venue[readonly]{opacity:1;color:#d9d6ee;background:#20243a;cursor:not-allowed}
+.moment-item{cursor:zoom-in}
+.moment-lightbox{display:none;position:fixed;inset:0;z-index:99999;background:rgba(5,7,16,.96);align-items:center;justify-content:center;flex-direction:column;padding:58px 16px 28px}
+.moment-lightbox.open{display:flex}
+.moment-lightbox-close{position:absolute;top:12px;right:18px;width:44px;height:44px;border:1px solid #ffffff44;border-radius:50%;background:#24243d;color:#fff;font-size:30px;cursor:pointer}
+.moment-lightbox-toolbar{position:absolute;top:15px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:2}
+.moment-lightbox-toolbar button{border:1px solid #ffffff55;border-radius:9px;background:#24243d;color:#fff;padding:9px 15px;font-size:16px;cursor:pointer}
+.moment-lightbox-stage{width:100%;height:calc(100% - 34px);display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+.moment-lightbox-stage img{max-width:100%;max-height:100%;object-fit:contain;transform:translate(0,0) scale(1);transform-origin:center center;user-select:none;-webkit-user-drag:none;cursor:grab;will-change:transform}.moment-lightbox-stage.zoomed img{cursor:grabbing}
+.moment-lightbox-help{color:#b9b4d1;font-size:12px;text-align:center;padding-top:8px}
+@media(max-width:650px){.tournament-ticker{width:100%;max-width:100%}.tournament-ticker-track span{font-size:15px}.moment-lightbox{padding:65px 8px 20px}.moment-lightbox-toolbar button{padding:8px 12px}.moment-lightbox-stage{height:calc(100% - 42px)}}
+
 </style>
 </head>
 <body>
-<header><div class="top"><div class="brand"><div class="crest">K</div><div><h1>KALIBARI KNIGHT FOOTBALL</h1><div class="sub">TOURNAMENT MANAGEMENT</div></div></div></div></header>
+<header class="tournament-header"><div class="top"><div class="tournament-ticker" aria-label="Tournament announcement"><div class="tournament-ticker-track"><span>কালিবাড়ি মিনিবাড় নাইট ফুটবল টুর্নামেন্ট ২০২৬, সিজন -২,　　১ম পুরষ্কার - ১টি ফ্রিজ　　২য় পুরষ্কার - ১টি স্মার্ট টিভি　　আয়োজনে কালিবাড়ি নাইট রাইডার্স।</span><span aria-hidden="true">কালিবাড়ি মিনিবাড় নাইট ফুটবল টুর্নামেন্ট ২০২৬, সিজন -২,　　১ম পুরষ্কার - ১টি ফ্রিজ　　২য় পুরষ্কার - ১টি স্মার্ট টিভি　　আয়োজনে কালিবাড়ি নাইট রাইডার্স।</span></div></div></div></header>
 <main>
 <section class="hero"><div class="kicker">BALASHI IT - OFFICIAL TOURNAMENT HUB</div><h2>Kalibari Knight Football Tournament, S-2</h2><p>Fixtures · Teams · Results · Tournament Updates</p></section>
 <div class="stats">
@@ -281,7 +301,12 @@ hr{border-top-color:#34384f!important}
   <div class="moments-viewport"><div id="momentsTrack" class="moments-track"></div></div>
   <div id="momentsEmpty" class="moments-empty">Match photos will appear here soon.</div>
 </section>
-
+<div id="momentLightbox" class="moment-lightbox" aria-hidden="true">
+ <button type="button" class="moment-lightbox-close" onclick="closeMomentLightbox()" aria-label="Close image">×</button>
+ <div class="moment-lightbox-toolbar"><button type="button" onclick="zoomMoment(-0.25)" aria-label="Zoom out">−</button><button type="button" onclick="resetMomentZoom()">Reset</button><button type="button" onclick="zoomMoment(0.25)" aria-label="Zoom in">＋</button></div>
+ <div class="moment-lightbox-stage" id="momentLightboxStage"><img id="momentLightboxImage" alt="Expanded match moment"></div>
+ <div class="moment-lightbox-help">Use + / −, mouse wheel, or pinch on mobile to zoom</div>
+</div>
 
 <section id="adminPanel" class="panel">
  <div class="section-head"><h3>Admin Workspace</h3><button class="secondary" onclick="toggleAdmin()">Close</button></div>
@@ -303,12 +328,12 @@ hr{border-top-color:#34384f!important}
  <div class="actions"><button id="saveTeamButton" class="primary" type="button" onclick="saveTeamForm()">＋ Add Team</button><button id="cancelTeamEdit" class="secondary hidden" type="button" onclick="cancelTeamEdit()">Cancel Edit</button></div>
  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
  <h3>Add Fixture</h3><div class="formgrid">
-  <div class="field"><label>Group</label><select id="matchGroup"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+  <div class="field"><label>Group</label><select id="matchGroup" onchange="updateFixtureTeamOptions()"><optgroup label="Group Stage"><option value="A">Group A</option><option value="B">Group B</option><option value="C">Group C</option><option value="D">Group D</option><option value="E">Group E</option><option value="F">Group F</option><option value="G">Group G</option><option value="H">Group H</option></optgroup><optgroup label="Knockout Stage"><option value="Round of 16">Round of 16</option><option value="Quarter Final">Quarter Final</option><option value="Semi-final">Semi-final</option><option value="Final">Final</option></optgroup></select></div>
   <div class="field"><label>Round / Match label</label><input id="round" placeholder="Group Match 1"></div>
   <div class="field"><label>Home team</label><select id="homeTeam"></select></div>
   <div class="field"><label>Away team</label><select id="awayTeam"></select></div>
   <div class="field"><label>Date & time</label><input id="matchDate" type="datetime-local"></div>
-  <div class="field"><label>Venue</label><input id="venue" placeholder="Tournament ground"></div>
+  <div class="field"><label>Venue</label><input id="venue" value="Bridge Road Kalibari Govt. Primary School" readonly aria-readonly="true"></div>
  </div><button class="primary" onclick="addMatch()">＋ Create Fixture</button>
  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
  <h3>Update Match Score</h3><div class="formgrid">
@@ -408,6 +433,7 @@ try {
 }
 const supabaseApi = supabaseClient;
 
+const FIXED_VENUE = "Bridge Road Kalibari Govt. Primary School";
 let currentUser = null;
 let isAdmin = false;
 let db = {teams:[], matches:[], notices:[], players:[]};
@@ -433,7 +459,7 @@ async function loadData(){
     else errors[key] = r.reason?.message || String(r.reason);
   });
   db.teams = (db.teams||[]).map(x=>({id:x.id,name:x.name,group:x.group_code,manager:x.manager_name||"",short:x.short_name||""}));
-  db.matches = (db.matches||[]).map(x=>({id:x.id,group:x.group_code,round:x.round_label,home:x.home_team_id,away:x.away_team_id,date:x.match_date,venue:x.venue||"",hs:x.home_score||0,as:x.away_score||0,status:x.status}));
+  db.matches = (db.matches||[]).map(x=>({id:x.id,group:x.group_code,round:x.round_label,home:x.home_team_id,away:x.away_team_id,date:x.match_date,venue:FIXED_VENUE,hs:x.home_score||0,as:x.away_score||0,status:x.status}));
   db.notices = (db.notices||[]).map(x=>({id:x.id,text:x.message,date:x.created_at}));
   db.players = (db.players||[]).map(x=>({id:x.id,team:x.team_id,name:x.player_name,goals:Number(x.goals)||0}));
   render();
@@ -594,7 +620,7 @@ async function saveTeamForm(){
  }catch(error){alert(error.message||String(error));}
  finally{if(button){button.disabled=false;button.textContent=editingTeamId?"Save Team Changes":"＋ Add Team";}}
 }
-async function addMatch(){if(!isAdmin)return alert("Admin login required.");let h=document.getElementById("homeTeam").value,a=document.getElementById("awayTeam").value;if(!h||!a||h===a)return alert("Choose two different teams");const {error}=await supabaseApi.from("matches").insert({group_code:document.getElementById("matchGroup").value,round_label:document.getElementById("round").value||"Group Match",home_team_id:h,away_team_id:a,match_date:dhakaDateTimeToISO(document.getElementById("matchDate").value),venue:document.getElementById("venue").value||null,home_score:0,away_score:0,status:"upcoming"});if(error)return alert(error.message);await save();}
+async function addMatch(){if(!isAdmin)return alert("Admin login required.");const stage=document.getElementById("matchGroup").value;let h=document.getElementById("homeTeam").value,a=document.getElementById("awayTeam").value;if(!h||!a||h===a)return alert("Choose two different teams");const allowed=getFixtureEligibleTeams(stage).map(t=>String(t.id));if(!allowed.includes(String(h))||!allowed.includes(String(a)))return alert("Choose teams qualified for the selected group/round.");const defaultRound=["A","B","C","D","E","F","G","H"].includes(stage)?"Group Match":stage;const {error}=await supabaseApi.from("matches").insert({group_code:stage,round_label:document.getElementById("round").value||defaultRound,home_team_id:h,away_team_id:a,match_date:dhakaDateTimeToISO(document.getElementById("matchDate").value),venue:FIXED_VENUE,home_score:0,away_score:0,status:"upcoming"});if(error)return alert(error.message);document.getElementById("round").value="";await save();}
 async function updateScore(){if(!isAdmin)return alert("Admin login required.");let id=document.getElementById("scoreMatch").value;if(!id)return alert("Create a fixture first");const {error}=await supabaseApi.from("matches").update({home_score:Math.max(0,+document.getElementById("homeScore").value||0),away_score:Math.max(0,+document.getElementById("awayScore").value||0),status:document.getElementById("matchStatus").value}).eq("id",id);if(error)return alert(error.message);await save();}
 async function addNotice(){if(!isAdmin)return alert("Admin login required.");let t=document.getElementById("noticeText").value.trim();if(!t)return;const {error}=await supabaseApi.from("notices").insert({message:t});if(error)return alert(error.message);document.getElementById("noticeText").value="";await save();}
 async function addPlayer(){if(!isAdmin)return alert("Admin login required.");const teamId=document.getElementById("playerTeam").value,name=document.getElementById("playerName").value.trim(),goals=Math.max(0,Number(document.getElementById("playerGoals").value)||0);if(!teamId||!name)return alert("Select a team and enter player name.");const {error}=await supabaseApi.from("team_players").insert({team_id:teamId,player_name:name,goals});if(error)return alert("Player save failed: "+error.message);document.getElementById("playerName").value="";document.getElementById("playerGoals").value="0";await save();}
@@ -625,20 +651,55 @@ async function editTeam(id){
  document.getElementById("teamFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
 }
 async function deleteTeam(id){if(!isAdmin)return alert("Admin login required.");const t=team(id);if(!t||!confirm(`Delete team "${t.name}"? This may fail if fixtures are linked to this team.`))return;const {error}=await supabaseApi.from("teams").delete().eq("id",id);if(error)return alert("Team delete failed: "+error.message);await save();}
-async function editMatch(id){if(!isAdmin)return alert("Admin login required.");const m=db.matches.find(x=>x.id===id);if(!m)return;const round=prompt("Round / match label:",m.round||"");if(round===null)return;const date=prompt("Date & time (YYYY-MM-DDTHH:MM):",m.date?isoToDhakaDateTimeInput(m.date):"");if(date===null)return;const venue=prompt("Venue:",m.venue||"");if(venue===null)return;const hs=prompt("Home score:",m.hs);if(hs===null)return;const as=prompt("Away score:",m.as);if(as===null)return;const status=prompt("Status: upcoming, live, completed",m.status||"upcoming");if(status===null)return;if(!["upcoming","live","completed"].includes(status.trim().toLowerCase()))return alert("Status must be upcoming, live, or completed.");const {error}=await supabaseApi.from("matches").update({round_label:round.trim(),match_date:dhakaDateTimeToISO(date),venue:venue.trim()||null,home_score:Math.max(0,Number(hs)||0),away_score:Math.max(0,Number(as)||0),status:status.trim().toLowerCase()}).eq("id",id);if(error)return alert("Fixture update failed: "+error.message);await save();}
+async function editMatch(id){if(!isAdmin)return alert("Admin login required.");const m=db.matches.find(x=>x.id===id);if(!m)return;const round=prompt("Round / match label:",m.round||"");if(round===null)return;const date=prompt("Date & time (YYYY-MM-DDTHH:MM):",m.date?isoToDhakaDateTimeInput(m.date):"");if(date===null)return;const hs=prompt("Home score:",m.hs);if(hs===null)return;const as=prompt("Away score:",m.as);if(as===null)return;const status=prompt("Status: upcoming, live, completed",m.status||"upcoming");if(status===null)return;if(!["upcoming","live","completed"].includes(status.trim().toLowerCase()))return alert("Status must be upcoming, live, or completed.");const {error}=await supabaseApi.from("matches").update({round_label:round.trim(),match_date:dhakaDateTimeToISO(date),venue:FIXED_VENUE,home_score:Math.max(0,Number(hs)||0),away_score:Math.max(0,Number(as)||0),status:status.trim().toLowerCase()}).eq("id",id);if(error)return alert("Fixture update failed: "+error.message);await save();}
 async function deleteMatch(id){if(!isAdmin||!confirm("Delete this fixture permanently?"))return;const {error}=await supabaseApi.from("matches").delete().eq("id",id);if(error)return alert("Fixture delete failed: "+error.message);await save();}
 async function editNotice(id){if(!isAdmin)return alert("Admin login required.");const n=db.notices.find(x=>x.id===id);if(!n)return;const message=prompt("Edit announcement:",n.text);if(message===null)return;if(!message.trim())return alert("Announcement cannot be empty.");const {error}=await supabaseApi.from("notices").update({message:message.trim()}).eq("id",id);if(error)return alert("Announcement update failed: "+error.message);await save();}
 async function deleteNotice(id){if(!isAdmin||!confirm("Delete this announcement permanently?"))return;const {error}=await supabaseApi.from("notices").delete().eq("id",id);if(error)return alert("Announcement delete failed: "+error.message);await save();}
 async function resetDemo(){alert("For safety, bulk reset is disabled in this connected version. Delete records from Supabase Table Editor if required.");}
-function cardMatch(m){let h=team(m.home),a=team(m.away);return `<div class="card" style="margin-bottom:10px"><div class="match"><div><b>${esc(h?.name||"TBD")}</b><br><small>${esc(m.group)} · ${esc(m.round)}</small></div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill">${esc(m.status.toUpperCase())}</span></div><div style="text-align:right"><b>${esc(a?.name||"TBD")}</b><br><small>${esc(m.venue||"Venue TBA")}</small></div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div></div>`}
+function cardMatch(m){let h=team(m.home),a=team(m.away);return `<div class="card" style="margin-bottom:10px"><div class="match"><div><b>${esc(h?.name||"TBD")}</b><br><small>${esc(m.group)} · ${esc(m.round)}</small></div><div style="text-align:center"><div class="score">${m.status==="upcoming"?"VS":`${m.hs} - ${m.as}`}</div><span class="pill">${esc(m.status.toUpperCase())}</span></div><div style="text-align:right"><b>${esc(a?.name||"TBD")}</b><br><small>${esc(FIXED_VENUE)}</small></div></div><div class="hint" style="margin-top:10px">${esc(dateText(m.date))}</div></div>`}
 function toggleTeamPlayers(id){const panel=document.getElementById("team-players-"+id);if(panel)panel.classList.toggle("open");}
 function standings(group){let rows=db.teams.filter(t=>t.group===group).map(t=>({id:t.id,name:t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));db.matches.filter(m=>m.group===group&&m.status==="completed").forEach(m=>{let h=rows.find(x=>x.id===m.home),a=rows.find(x=>x.id===m.away);if(!h||!a)return;h.p++;a.p++;h.gf+=m.hs;h.ga+=m.as;a.gf+=m.as;a.ga+=m.hs;if(m.hs>m.as){h.w++;a.l++;h.pts+=3}else if(m.hs<m.as){a.w++;h.l++;a.pts+=3}else{h.d++;a.d++;h.pts++;a.pts++}});return rows.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf)}
-function render(){document.getElementById("teamCount").textContent=db.teams.length;document.getElementById("groupCount").textContent=new Set(db.teams.map(t=>t.group)).size;document.getElementById("matchCount").textContent=db.matches.length;document.getElementById("completedCount").textContent=db.matches.filter(m=>m.status==="completed").length;
+const GROUP_CODES=["A","B","C","D","E","F","G","H"];
+const KNOCKOUT_STAGES=["Round of 16","Quarter Final","Semi-final","Final"];
+function getStageWinners(stage){
+ const winners=[];
+ db.matches.filter(m=>m.group===stage&&m.status==="completed").forEach(m=>{
+  if(Number(m.hs)>Number(m.as))winners.push(team(m.home));
+  else if(Number(m.as)>Number(m.hs))winners.push(team(m.away));
+ });
+ return winners.filter(Boolean);
+}
+function getFixtureEligibleTeams(stage){
+ if(GROUP_CODES.includes(stage))return db.teams.filter(t=>t.group===stage);
+ if(stage==="Round of 16"){
+  const qualified=[];
+  GROUP_CODES.forEach(g=>qualified.push(...standings(g).filter(row=>row.p>0).slice(0,2).map(row=>team(row.id)).filter(Boolean)));
+  return qualified;
+ }
+ if(stage==="Quarter Final")return getStageWinners("Round of 16");
+ if(stage==="Semi-final")return getStageWinners("Quarter Final");
+ if(stage==="Final")return getStageWinners("Semi-final");
+ return [];
+}
+function updateFixtureTeamOptions(){
+ const stage=document.getElementById("matchGroup")?.value||"A";
+ const eligible=getFixtureEligibleTeams(stage);
+ ["homeTeam","awayTeam"].forEach(id=>{
+  const select=document.getElementById(id);if(!select)return;
+  const previous=select.value;
+  select.innerHTML='<option value="">'+(eligible.length?"Select team":"No qualified teams yet")+'</option>'+
+   eligible.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}${GROUP_CODES.includes(stage)?" (Group "+esc(t.group)+")":""}</option>`).join("");
+  if(eligible.some(t=>String(t.id)===String(previous)))select.value=previous;
+ });
+ const round=document.getElementById("round");
+ if(round&&KNOCKOUT_STAGES.includes(stage)&&(!round.value||KNOCKOUT_STAGES.includes(round.value)))round.value=stage;
+}
+function render(){const venueInput=document.getElementById("venue");if(venueInput)venueInput.value=FIXED_VENUE;document.getElementById("teamCount").textContent=db.teams.length;document.getElementById("groupCount").textContent=new Set(db.teams.map(t=>t.group)).size;document.getElementById("matchCount").textContent=db.matches.length;document.getElementById("completedCount").textContent=db.matches.filter(m=>m.status==="completed").length;
 let teams=db.teams.map(t=>{const members=db.players.filter(p=>p.team===t.id).sort((a,b)=>a.name.localeCompare(b.name));return `<div class="card team-card" onclick="toggleTeamPlayers('${t.id}')"><div class="team"><div class="badge">⚽</div><div style="flex:1"><b class="team-name">${esc(t.name)}</b><small>Group ${esc(t.group)}${t.manager?" · "+esc(t.manager):""}</small></div><span class="pill">${members.length} PLAYER${members.length===1?"":"S"}</span></div><div id="team-players-${esc(t.id)}" class="team-player-details">${members.length?members.map(p=>`<div class="team-player-line"><span>${esc(p.name)}</span><b>${p.goals} goal${p.goals===1?"":"s"}</b></div>`).join(""):'<p class="hint">No players added for this team yet.</p>'}</div></div>`}).join("")||'<div class="empty">No teams added yet. Admin can add participating teams.</div>';document.getElementById("teamList").innerHTML=teams;
 let matches=db.matches.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));document.getElementById("fixtureList").innerHTML=matches.map(cardMatch).join("")||'<div class="empty">Fixtures will appear here when published.</div>';document.getElementById("homeMatches").innerHTML=matches.filter(m=>m.status!=="completed").slice(0,3).map(cardMatch).join("")||'<div class="empty">No upcoming matches announced.</div>';document.getElementById("resultList").innerHTML=matches.filter(m=>m.status==="completed").map(cardMatch).join("")||'<div class="empty">No completed match results yet.</div>';
 let groups=[...new Set(db.teams.map(t=>t.group))].sort();document.getElementById("standingList").innerHTML=groups.map(g=>`<div class="card" style="margin-bottom:13px"><h3>Group ${g}</h3><table class="table"><thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${standings(g).map(r=>`<tr><td>${esc(r.name)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div>`).join("")||'<div class="empty">Standings will be calculated after teams and results are added.</div>';
 let ns=db.notices.map(n=>`<div class="card" style="margin-bottom:9px"><b>📢 Tournament Notice</b><p style="margin:7px 0">${esc(n.text)}</p><small class="hint">${dateText(n.date)}</small></div>`).join("")||'<div class="empty">No announcements yet.</div>';document.getElementById("noticeList").innerHTML=ns;document.getElementById("homeNotices").innerHTML=db.notices.slice(0,2).map(n=>`<div class="notice">${esc(n.text)}<div class="hint" style="margin-top:5px">${dateText(n.date)}</div></div>`).join("")||'<div class="hint">No announcements published.</div>';
-let opts=db.teams.map(t=>`<option value="${t.id}">${esc(t.name)} (Group ${t.group})</option>`).join("");["homeTeam","awayTeam"].forEach(id=>document.getElementById(id).innerHTML='<option value="">Select team</option>'+opts);document.getElementById("scoreMatch").innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("")
+updateFixtureTeamOptions();document.getElementById("scoreMatch").innerHTML='<option value="">Select match</option>'+matches.map(m=>`<option value="${m.id}">${esc(team(m.home)?.name||"TBD")} vs ${esc(team(m.away)?.name||"TBD")} · ${m.status}</option>`).join("")
 const playerOpts=db.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");const playerTeam=document.getElementById("playerTeam");if(playerTeam)playerTeam.innerHTML='<option value="">Select team</option>'+playerOpts;
 const scorers=db.players.filter(p=>Number(p.goals)>0).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));document.getElementById("topScorers").innerHTML=scorers.length?`<div class="card"><table class="table"><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Goals</th></tr></thead><tbody>${scorers.map((p,i)=>`<tr><td>${i+1}</td><td><b>${esc(p.name)}</b></td><td>${esc(team(p.team)?.name||"Unknown team")}</td><td><b>${p.goals}</b></td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Player goal records will appear here.</div>';
 // Admin management lists are rendered only after a verified admin login.
@@ -764,6 +825,67 @@ async function deleteMatchMoment(encodedName) {
   await loadMatchMoments();
   alert("Photo deleted successfully.");
 }
+
+let momentZoom=1,momentPanX=0,momentPanY=0,momentTouchStartDistance=0,momentTouchStartZoom=1;
+let momentDrag=null,momentLastTap=0;
+function applyMomentZoom(){
+ const img=document.getElementById("momentLightboxImage");
+ if(!img)return;
+ if(momentZoom<=1){momentPanX=0;momentPanY=0;}
+ img.style.transform=`translate(${momentPanX}px,${momentPanY}px) scale(${momentZoom})`;
+}
+function zoomMoment(delta){momentZoom=Math.max(1,Math.min(5,momentZoom+delta));applyMomentZoom();}
+function resetMomentZoom(){momentZoom=1;momentPanX=0;momentPanY=0;applyMomentZoom();}
+function openMomentLightbox(url,alt){
+ const box=document.getElementById("momentLightbox"),img=document.getElementById("momentLightboxImage");
+ if(!box||!img)return;img.src=url;img.alt=alt||"Expanded match moment";resetMomentZoom();box.classList.add("open");box.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
+}
+function closeMomentLightbox(){
+ const box=document.getElementById("momentLightbox");if(!box)return;box.classList.remove("open");box.setAttribute("aria-hidden","true");document.body.style.overflow="";resetMomentZoom();
+}
+document.addEventListener("click",event=>{
+ const img=event.target.closest(".moment-item img");
+ if(img){openMomentLightbox(img.currentSrc||img.src,img.alt);return;}
+ if(event.target.id==="momentLightbox"||event.target.id==="momentLightboxStage")closeMomentLightbox();
+});
+document.addEventListener("keydown",event=>{
+ const open=document.getElementById("momentLightbox")?.classList.contains("open");
+ if(event.key==="Escape")closeMomentLightbox();
+ if(!open)return;
+ if(event.key==="+"||event.key==="=")zoomMoment(.25);
+ if(event.key==="-")zoomMoment(-.25);
+});
+const momentStage=document.getElementById("momentLightboxStage");
+momentStage?.addEventListener("wheel",event=>{event.preventDefault();zoomMoment(event.deltaY<0?.2:-.2);},{passive:false});
+/* Double click / double tap: toggle between fit and 2.5x */
+momentStage?.addEventListener("dblclick",event=>{if(event.target.id!=="momentLightboxImage")return;momentZoom=momentZoom>1?1:2.5;applyMomentZoom();});
+/* Mouse drag to pan when zoomed in */
+momentStage?.addEventListener("mousedown",event=>{if(momentZoom<=1||event.target.id!=="momentLightboxImage")return;event.preventDefault();momentDrag={x:event.clientX-momentPanX,y:event.clientY-momentPanY};momentStage.classList.add("zoomed");});
+window.addEventListener("mousemove",event=>{if(!momentDrag)return;momentPanX=event.clientX-momentDrag.x;momentPanY=event.clientY-momentDrag.y;applyMomentZoom();});
+window.addEventListener("mouseup",()=>{momentDrag=null;momentStage?.classList.remove("zoomed");});
+/* Touch: pinch to zoom, one finger to pan when zoomed, double tap to zoom */
+momentStage?.addEventListener("touchstart",event=>{
+ if(event.touches.length===2){
+  const dx=event.touches[0].clientX-event.touches[1].clientX,dy=event.touches[0].clientY-event.touches[1].clientY;
+  momentTouchStartDistance=Math.hypot(dx,dy);momentTouchStartZoom=momentZoom;momentDrag=null;
+ }else if(event.touches.length===1){
+  const now=Date.now();
+  if(now-momentLastTap<300&&event.target.id==="momentLightboxImage"){momentZoom=momentZoom>1?1:2.5;applyMomentZoom();momentLastTap=0;return;}
+  momentLastTap=now;
+  if(momentZoom>1)momentDrag={x:event.touches[0].clientX-momentPanX,y:event.touches[0].clientY-momentPanY};
+ }
+},{passive:true});
+momentStage?.addEventListener("touchmove",event=>{
+ if(event.touches.length===2&&momentTouchStartDistance){
+  event.preventDefault();
+  const dx=event.touches[0].clientX-event.touches[1].clientX,dy=event.touches[0].clientY-event.touches[1].clientY;
+  momentZoom=Math.max(1,Math.min(5,momentTouchStartZoom*(Math.hypot(dx,dy)/momentTouchStartDistance)));applyMomentZoom();
+ }else if(event.touches.length===1&&momentDrag&&momentZoom>1){
+  event.preventDefault();
+  momentPanX=event.touches[0].clientX-momentDrag.x;momentPanY=event.touches[0].clientY-momentDrag.y;applyMomentZoom();
+ }
+},{passive:false});
+momentStage?.addEventListener("touchend",()=>{momentTouchStartDistance=0;momentDrag=null;},{passive:true});
 
 if (supabaseApi) { loadData().catch(e=>console.error("Supabase data load error:",e)); } else { console.error(supabaseInitError); }
 </script>
